@@ -2,13 +2,13 @@ CXX = c++
 
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -IIncludes
 
-CPPFILES_Y = $(addprefix src/, multiplexer.cpp main.cpp)
+CPPFILES_Y = $(addprefix src/, multiplexer.cpp main.cpp cfileparser.cpp)
 
 CPPFILES_S = $(addprefix src/, )
 
 CPPFILES_A = $(addprefix src/, )
 
-CPPINCLUDES = $(addprefix Includes/, multiplexer.hpp)
+CPPINCLUDES = $(addprefix Includes/, multiplexer.hpp cfileparser.hpp)
 
 OFILES = $(CPPFILES_Y:.cpp=.o) $(CPPFILES_S:.cpp=.o) $(CPPFILES_A:.cpp=.o)
 
