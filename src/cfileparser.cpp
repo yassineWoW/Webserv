@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/02 18:13:25 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/03 20:44:01 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/04 20:09:44 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,25 +84,77 @@ std::vector<std::string> ConfigParser::tokenize(const std::string &input)
 
 size_t parse_location(const std::vector<std::string> &tokens, size_t i, LocationConfig &location)
 {
+	if (tokens.size() <= i + 2 || tokens[i + 2] != "{")
+		throw std::runtime_error("Syntax error: 'location' block must be followed by a path and a '{'");
+	
 	location.path = tokens[i + 1];
 	i += 3;
-	while (tokens[i] != "}")
+	while (tokens[i] != "}" && i < tokens.size())
 	{
 		if (tokens[i] == "root")
 		{
+			if (tokens.size() <= i + 2 || tokens[i + 2] != ";")
+				throw std::runtime_error("Syntax error: 'root' directive must end with a ';'");
 			location.root = tokens[i + 1];
 			i += 3;
 		}
 		else if (tokens[i] == "index")
 		{
+			if (tokens.size() <= i + 2 || tokens[i + 2] != ";")
+				throw std::runtime_error("Syntax error: 'index' directive must end with a ';'");
 			location.index = tokens[i + 1];
 			i += 3;
 		}
+		else if (tokens[i] == "autoindex")
+		{
+			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
+                throw std::runtime_error("Syntax error: 'autoindex' directive must end with ';'");
+            location.autoindex = (tokens[i + 1] == "on");
+            i += 3;
+		}
+		else if (tokens[i] == "allowed_methods")
+		{
+            i++;
+            while (i < tokens.size() && tokens[i] != ";")
+			{
+                location.allowed_methods.push_back(tokens[i]);
+                i++;
+            }
+            if (i == tokens.size() || tokens[i] != ";")
+                throw std::runtime_error("Syntax error: 'allowed_methods' directive must end with ';'");
+            i++;
+        }
+		else if (tokens[i] == "cgi_pass")
+		{
+			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
+				throw std::runtime_error("Syntax error: 'cgi_pass' directive must end with ';'");
+			location.cgi_pass = tokens[i + 1];
+			i += 3;
+		}
+		else if (tokens[i] == "upload_path")
+		{
+			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
+				throw std::runtime_error("Syntax error: 'upload_path' directive must end with ';'");
+			location.upload_path = tokens[i + 1];
+			i += 3;
+		}
+		else if (tokens[i] == "return")
+		{
+            if (i + 3 >= tokens.size() || tokens[i + 3] != ";")
+                throw std::runtime_error("Syntax error: 'return' directive must be: return <code> <url>;");
+            location.redirection_code = tokens[i + 1];
+            location.redirection_url = tokens[i + 2];
+            i += 4;
+        }
 		else
 		{
-			i++;
+			std::ostringstream oss;
+			oss << "Unknown or misplaced directive in location block: '" << tokens[i] << "'";
+			throw std::runtime_error(oss.str());
 		}
 	}
+	if (tokens.size() == i)
+		throw std::runtime_error("Syntax error: 'location' block not closed with '}");
 	return (i + 1);
 }
 
@@ -114,22 +166,46 @@ std::vector<ServerConfig> ConfigParser::parse(const std::vector<std::string> tok
 	
 	while (i < tokens.size())
 	{
-		if (tokens[i] == "server" && tokens[i + 1] == "{")
+		if (tokens[i] == "server")
 		{
-			ServerConfig server;
-			i += 2;
-			while (tokens[i] != "}")
+            size_t j = i + 1;
+            while (j < tokens.size() && tokens[j] != "{") 
+				++j;
+            if (j == tokens.size())
+                throw std::runtime_error("Syntax error: 'server' block not opened with '{'");
+            ServerConfig server;
+            i = j + 1;
+            while (i < tokens.size() && tokens[i] != "}")
 			{
 				if (tokens[i] == "listen")
 				{
+					if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
+						throw std::runtime_error("Syntax error: 'listen' directive must end with ';'");
 					server.listen_port = atoi(tokens[i + 1].c_str());
 					i += 3;
-				}
+                }
 				else if (tokens[i] == "server_name")
 				{
+					if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
+						throw std::runtime_error("Syntax error: 'server_name' directive must end with a ';'");
 					server.server_name = tokens[i + 1];
 					i += 3;
 				}
+				else if (tokens[i] == "error_page")
+				{
+					if (i + 3 >= tokens.size() || tokens[i + 3] != ";")
+						throw std::runtime_error("Syntax error: 'error_page' directive must be: error_page <code> <path>;");
+					int code = atoi(tokens[i + 1].c_str());
+					server.error_pages[code] = tokens[i + 2];
+					i += 4;
+                }
+				else if (tokens[i] == "client_max_body_size")
+				{
+					if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
+						throw std::runtime_error("Syntax error: 'client_max_body_size' directive must end with ';'");
+					server.client_max_body_size = atoi(tokens[i + 1].c_str());
+					i += 3;
+                }
 				else if (tokens[i] == "location")
 				{
 					LocationConfig location;
@@ -137,8 +213,14 @@ std::vector<ServerConfig> ConfigParser::parse(const std::vector<std::string> tok
 					server.locations.push_back(location);
 				}
 				else
-					i++;
+				{
+					std::ostringstream oss;
+					oss << "Unknown or misplaced directive in server block: '" << tokens[i] << "'";
+					throw std::runtime_error(oss.str());
+				}
 			}
+			if (i == tokens.size())
+				throw std::runtime_error("Syntax error: 'server' block not closed with a '}'");
 			servers.push_back(server);
 		}
 		++i;
