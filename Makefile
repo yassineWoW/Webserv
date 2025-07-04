@@ -8,7 +8,7 @@ CPPFILES_S = $(addprefix src/, )
 
 CPPFILES_A = $(addprefix src/, )
 
-CPPINCLUDES = $(addprefix Includes/, multiplexer.hpp cfileparser.hpp, includes.hpp)
+CPPINCLUDES = $(addprefix Includes/, multiplexer.hpp cfileparser.hpp includes.hpp)
 
 OFILES = $(CPPFILES_Y:.cpp=.o) $(CPPFILES_S:.cpp=.o) $(CPPFILES_A:.cpp=.o)
 

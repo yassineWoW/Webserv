@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/02 18:13:39 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/03 20:14:02 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/03 22:49:34 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,8 @@ struct LocationConfig
 	std::string index;
 	bool autoindex;
 	std::vector<std::string> allowed_methods;
-	std::string redirection;
+	std::string redirection_url;
+	std::string redirection_code;
 	std::string cgi_pass; 
 	std::string upload_path;
 };
@@ -33,6 +34,7 @@ struct ServerConfig
 	std::string server_name;
 	std::vector<LocationConfig> locations;
 	std::map<int, std::string> error_pages;
+	size_t client_max_body_size;
 };
 
 
