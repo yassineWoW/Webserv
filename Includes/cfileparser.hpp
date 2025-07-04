@@ -13,15 +13,7 @@
 #ifndef CFILEPARSER_HPP
 # define CFILEPARSER_HPP
 
-
-
-#include <iostream>
-#include <cstdlib>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <map>
+#include "includes.hpp"
 
 struct LocationConfig
 {

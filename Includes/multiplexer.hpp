@@ -13,17 +13,7 @@
 #ifndef MULTIPLEXER_HPP
 # define MULTIPLEXER_HPP
 
-
-#include <stdexcept>
-#include <iostream>
-#include <sys/socket.h> // socket, bind, listen
-#include <netinet/in.h> // sockaddr_in
-#include <arpa/inet.h> // for htons and htonl
-#include <sys/epoll.h>
-#include <cstring> // for memset hehe
-#include <unistd.h>
-#include <fcntl.h>
-
+#include "includes.hpp"
 
 class Multiplexer
 {
