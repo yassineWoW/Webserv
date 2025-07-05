@@ -4,7 +4,8 @@ CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -IIncludes
 
 CPPFILES_Y = $(addprefix src/, multiplexer.cpp main.cpp cfileparser.cpp)
 
-CPPFILES_S = $(addprefix src/HttpRequest/, parseRequest/HttpRequest.cpp)
+CPPFILES_S = $(addprefix src/HttpRequest/, HttpRequest.cpp) \
+	$(addprefix src/HttpRequest/parseRequest/, parseRequest.cpp r_body.cpp r_header.cpp r_start_line.cpp helpers.cpp)
 
 CPPFILES_A = $(addprefix src/, )
 
