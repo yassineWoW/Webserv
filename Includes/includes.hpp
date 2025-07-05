@@ -15,5 +15,6 @@
 #include <cstring> // for memset hehe
 #include <unistd.h>
 #include <fcntl.h>
+#include <climits>
 
 #endif
