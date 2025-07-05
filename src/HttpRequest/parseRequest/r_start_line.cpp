@@ -9,6 +9,30 @@
     Returns true if the delimiter exists in 'request'; otherwise, returns false.
 */
 
+ParseResult validate_path(std::string &path)
+{
+    size_t len = path.length() - 1;
+
+    if ( path.empty() || path[0] != '/' )
+        return (BadRequest);
+
+    if ( path[len] != '/' )
+        path += "/";
+
+    for (size_t i = 0; i < len; i++)
+    {
+        if ( static_cast<unsigned char>(path[i]) != '\0' && (is_invalid_key_char(static_cast<unsigned char>(path[i])) || static_cast<unsigned char>(path[i]) == ' '))
+            return ( BadRequest );
+
+        if ( i < len && path[i] == '/' && path[i + 1] && path[i + 1] == '/' )
+        {
+            path.erase(i + 1, 1);
+            i--;
+        }
+    }
+    return ( OK );
+}
+
 ParseResult HttpRequest::parse_start_line(std::string &start_line)
 {
     std::string method, url, version;
@@ -19,7 +43,8 @@ ParseResult HttpRequest::parse_start_line(std::string &start_line)
     if (!find_and_get(start_line, url, " "))
         return (BadRequest);
 
-    version = start_line;  
+    version = start_line;
+  
     if (version != "HTTP/1.1")
         return (BadRequest);
 
@@ -31,8 +56,13 @@ ParseResult HttpRequest::parse_start_line(std::string &start_line)
     if (find_and_get(url, r_url, "?")){
         r_query = url;
     }
-    if (r_url[0] != '/')
+
+    if (validate_path(r_url) != OK)
         return (BadRequest);
+
+    std::cout << "##################URI###############\n";
+    std::cout << "["<<r_url<<"]" << std::endl;
+;
     std::cout << "-------------- START LINE END-------------\n";
     return (OK);
 }
