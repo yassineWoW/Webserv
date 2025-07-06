@@ -2,7 +2,7 @@ CXX = c++
 
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -IIncludes
 
-CPPFILES_Y = $(addprefix src/Multiplexing, multiplexer.cpp main.cpp cfileparser.cpp)
+CPPFILES_Y = $(addprefix src/Multiplexing/, multiplexer.cpp  cfileparser.cpp) $(addprefix src/, main.cpp)
 
 CPPFILES_S = $(addprefix src/HttpRequest/, HttpRequest.cpp) \
 	$(addprefix src/HttpRequest/parseRequest/, parseRequest.cpp r_body.cpp r_header.cpp r_start_line.cpp helpers.cpp)
