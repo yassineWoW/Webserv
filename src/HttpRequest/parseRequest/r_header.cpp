@@ -9,6 +9,31 @@
     Returns true if the delimiter exists in 'request'; otherwise, returns false.
 */
 
+bool validate_required_headers(const std::vector<S_Header>& headers, const std::string& method)
+{
+    std::string required_headers[] = { "host", "user-agent", "accept", (method == "POST"? "content-type" : "END"), "END" };
+    for (std::vector<S_Header>::const_iterator begin = headers.begin(); begin != headers.end(); begin++)
+    {
+        bool flag = false;
+        for (int i = 0; i < 5; i++)
+        {
+            if (required_headers[i] == "END")
+                break ;
+
+            if (required_headers[i] == begin->key)
+            {
+                flag = true;
+                break ;
+            }
+        }
+
+        if (!flag)
+            return (false);
+    }
+    return (true);
+}
+
+
 ParseResult HttpRequest::parse_header(std::string &header)
 {
     header+= "\r\n";
@@ -20,6 +45,8 @@ ParseResult HttpRequest::parse_header(std::string &header)
         if (!find_and_get(header, head.key, ":"))
             return (BadRequest);
 
+        head.key = to_lower(head.key);
+
         if (!check_valid_spaces(header, 1))
             return (BadRequest);
 
@@ -29,7 +56,7 @@ ParseResult HttpRequest::parse_header(std::string &header)
         if (head.key.empty() || header_invalid_chars(head.key, head.value))
             return (BadRequest);
 
-        if (to_lower(head.key) == "content-length")
+        if (head.key == "content-length")
         {
             for (size_t i = 0; i < head.value.length(); i++) {
                 if (i == 0 && head.value[i] == ' ')
@@ -44,7 +71,7 @@ ParseResult HttpRequest::parse_header(std::string &header)
             r_has_content_length = true;
         }
 
-        if (to_lower(head.key) == "transfer-encoding")
+        if (head.key == "transfer-encoding")
         {
             if (head.value.empty())
                 return (BadRequest);
@@ -52,5 +79,7 @@ ParseResult HttpRequest::parse_header(std::string &header)
         }
         r_header.push_back(head);
     }
+    if (!validate_required_headers(r_header, r_method))
+        return (BadRequest);
     return (OK);
 }
