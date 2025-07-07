@@ -2,13 +2,25 @@
 #define REQUEST_HPP
 
 #include "includes.hpp"
+#include "cfileparser.hpp"
 
 struct S_Header {
     std::string key;
     std::string value;
 };
 
-enum ParseResult { OK, BadRequest, NotAllowed,Incomplete };
+enum ParseResult {
+    OK,
+    BadRequest,         // 400 - Malformed request syntax or invalid headers
+    NotAllowed,         // 405 - Method not allowed
+    Incomplete,         // Request is not complete yet (waiting for more data)
+    URITooLong,         // 414 - URI too long
+    PayloadTooLarge,    // 413 - Content-Length too big
+    HTTPVersionNotSupported, // 505 - HTTP version not supported
+    UnsupportedMediaType,    // 415 - Unsupported Content-Type
+    HeaderFieldsTooLarge,    // 431 - Too large header fields
+    InternalError       // 500 - Internal server error during parsing
+};
 
 class HttpRequest
 {
@@ -18,6 +30,8 @@ class HttpRequest
     unsigned int            r_content_length;
     bool                    r_has_content_length;
     bool                    r_has_transfer_encoding;
+    std::string             r_host;
+    ServerConfig            server ;
     public:
         HttpRequest();
         ParseResult parse(std::string request);
@@ -25,6 +39,7 @@ class HttpRequest
         ParseResult parse_header(std::string &header);
         ParseResult parse_body();
         ~HttpRequest();
+        ParseResult getServer();
 
 };
 
