@@ -27,11 +27,13 @@ class HttpRequest
     std::string             r_method, r_url, r_version, r_query;
     std::vector<S_Header>   r_header;
     std::string             r_body;
+    std::string             path;
     unsigned int            r_content_length;
     bool                    r_has_content_length;
     bool                    r_has_transfer_encoding;
     std::string             r_host;
     ServerConfig            server ;
+    LocationConfig          location;
     public:
         HttpRequest();
         ParseResult parse(std::string request);
@@ -39,8 +41,11 @@ class HttpRequest
         ParseResult parse_header(std::string &header);
         ParseResult parse_body();
         ~HttpRequest();
-        ParseResult getServer();
 
+        ParseResult     setServer();
+        ParseResult     setLocation();
+        ServerConfig&   getServer() ;
+        LocationConfig& getLocation() ;
 };
 
 bool        find_and_get(std::string &request, std::string &dest, std::string delimeter) ;
