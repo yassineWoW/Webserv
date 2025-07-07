@@ -1,5 +1,16 @@
 #include "HttpRequest.hpp"
 
+ParseResult find_server_location(HttpRequest *http)
+{
+    ParseResult result= http->setServer(); // setServer --> match the server and return ParseResult
+    if ( result != OK )
+        return (result);
+    result = http->setLocation();
+    if ( result != OK )
+        return (result);
+    return ( OK ); // setLocation --> find the best location based on request URI, and return ParseResult
+}
+
 ParseResult HttpRequest::parse(std::string request)
 {
     std::string start_line, header;
@@ -17,6 +28,8 @@ ParseResult HttpRequest::parse(std::string request)
 
     if(r_method != "GET" && parse_body() != OK)
         return (BadRequest);
-    
-    return ( this->getServer() ); // getServer --> match the server and return ParseResult
+
+    return ( find_server_location(this) );
+ 
+
 }
