@@ -20,8 +20,8 @@ bool validate_required_headers(const std::vector<S_Header>& headers, const std::
             if (required_headers[i] == "END")
                 break ;
 
-            if (required_headers[i] == begin->key)
-            {
+            if (required_headers[i] == begin->key && !begin->value.empty())
+            {                
                 flag = true;
                 break ;
             }
@@ -77,6 +77,10 @@ ParseResult HttpRequest::parse_header(std::string &header)
                 return (BadRequest);
             r_has_transfer_encoding = true;
         }
+
+        if (head.key == "host")
+            r_host = head.value;
+
         r_header.push_back(head);
     }
     if (!validate_required_headers(r_header, r_method))
