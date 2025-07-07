@@ -17,5 +17,6 @@ ParseResult HttpRequest::parse(std::string request)
 
     if(r_method != "GET" && parse_body() != OK)
         return (BadRequest);
-    return (OK);
+    
+    return ( this->getServer() ); // getServer --> match the server and return ParseResult
 }
