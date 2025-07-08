@@ -38,7 +38,9 @@ ParseResult HttpRequest::parse(std::string request)
     ParseResult result = find_server_location(this);
     if ( result != OK )
         return (result);
-    
+
+    std::cout << "-------------- Find Server END-------------\n";
+
     check_valid_path( );
 
     std::cout << "\n\n------------------------BODY-----------------------------\n\n" << std::endl;
