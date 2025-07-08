@@ -17,5 +17,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <climits>
+#include <sys/stat.h>
 
 #endif
