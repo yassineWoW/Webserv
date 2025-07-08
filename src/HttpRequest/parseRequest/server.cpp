@@ -112,10 +112,20 @@ int main()
     HttpRequest http;
 
     const char* response = NULL;
-    if (http.parse(request) == BadRequest)
-        response = "HTTP/1.1 400 BadRequest\r\n";
+    if (http.parse(request) != OK)
+    {
+        response = "HTTP/1.1 400 BadRequest\r\n"
+            "Content-Length: 11\r\n"
+            "Content-Type: text/plain\r\n"
+            "\r\n"
+            "NOT FOUND!\n";
+
+    }
     else
     {
+        std::cout << "Server Is [" << http.getServer().server_name << "]\n" << std::endl;
+        std::cout << "Location Is [" << http.getLocation().path << "]\n" << std::endl;
+        std::cout << "Path Is [" << http.getPath() << "]\n" << std::endl;
         response = "HTTP/1.1 200 OK\r\n"
         "Content-Length: 13\r\n"
         "Content-Type: text/plain\r\n"

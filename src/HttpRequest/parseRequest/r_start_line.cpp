@@ -59,10 +59,6 @@ ParseResult HttpRequest::parse_start_line(std::string &start_line)
 
     if (validate_path(r_url) != OK)
         return (BadRequest);
-
-    std::cout << "##################URI###############\n";
-    std::cout << "["<<r_url<<"]" << std::endl;
-;
-    std::cout << "-------------- START LINE END-------------\n";
+    
     return (OK);
 }
