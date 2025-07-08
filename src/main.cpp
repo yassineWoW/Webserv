@@ -33,6 +33,7 @@ int main(int ac, char **av)
 				std::cout << "      Index: " << servers[i].locations[j].index << "\n";
 			}
 		}
+        server();
 		//server->run();
 	}
 	catch (const std::exception &e)
