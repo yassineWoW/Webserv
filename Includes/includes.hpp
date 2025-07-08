@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <set>
 #include <map>
 #include <stdexcept>
 #include <sys/socket.h> // socket, bind, listen

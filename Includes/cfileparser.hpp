@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/02 18:13:39 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/03 22:49:34 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/07 19:58:45 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,6 @@ class ConfigParser
 		std::vector<ServerConfig> &getServers();
 };
 
-void mainparser();
 size_t parse_location(const std::vector<std::string> &tokens, size_t i, LocationConfig &location);
 
 #endif
