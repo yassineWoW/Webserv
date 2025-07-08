@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 21:46:09 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/01 21:39:29 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/08 14:14:22 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,10 +14,12 @@
 
 Multiplexer* Multiplexer::instance = NULL;
 
+Multiplexer::Multiplexer()
+{}
 
-Multiplexer* Multiplexer::getInstance(int port) {
+Multiplexer* Multiplexer::getInstance() {
 	if (instance == NULL) {
-		instance = new Multiplexer(port);
+		instance = new Multiplexer();
     }
     return instance;
 }
@@ -48,6 +50,124 @@ int Multiplexer::SetupServerSocket(int port)
 	return listen_fd;
 }
 
-Multiplexer::Multiplexer(int port) {
-	SetupServerSocket(port);
+void Multiplexer::handleClient(int client_fd)
+{
+	char buf[4096];
+	ssize_t n = recv(client_fd, buf, sizeof(buf), 0);
+	if (n <= 0)
+	{
+		close(client_fd);
+		client_states.erase(client_fd);
+		return ;
+	}
+	ClientState &state = client_states[client_fd];
+	state.buffer.append(buf, n);
+	if (state.buffer.find("\r\n\r\n") != std::string::npos)
+	{
+		state.request_complete = true;
+		// wa soufyan: parse and handle the request!! ;
+	}
+}
+
+void	Multiplexer::handleNewConnection(int listen_fd)
+{
+	int client_fd = accept(listen_fd, NULL, NULL);
+	if (client_fd < 0)
+	{
+		return ; // or throw an exception
+	}
+	client_states[client_fd] = ClientState();
+	int flags = fcntl(client_fd, F_GETFL, 0);
+	if (flags < 0 || fcntl(client_fd, F_SETFL, flags | O_NONBLOCK) < 0)
+    {
+        perror("fcntl");
+        close(client_fd);
+        client_states.erase(client_fd);
+        return;
+    }
+	struct epoll_event ev;
+	ev.events = EPOLLIN;
+	ev.data.fd = client_fd;
+	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) < 0)
+	{
+		perror("epoll_ctl: client_fd");
+		close(client_fd);
+		client_states.erase(client_fd);
+		return ;
+	}
+}
+
+void 	Multiplexer::run()
+{
+	epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+    if (epoll_fd < 0) {
+        perror("epoll_create1");
+        throw std::runtime_error("Failed to create epoll instance");
+    }
+
+    // 2. Set up listening sockets (assuming you have a vector of ports)
+    std::vector<int> listen_fds;
+    std::set<int> listen_fd_set; // For quick lookup in is_listening_socket
+    for (size_t i = 0; i < server_ports.size(); ++i) {
+        int fd = SetupServerSocket(server_ports[i]);
+        listen_fds.push_back(fd);
+        listen_fd_set.insert(fd);
+
+        struct epoll_event ev;
+        ev.events = EPOLLIN;
+        ev.data.fd = fd;
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) < 0) {
+            perror("epoll_ctl: listen_fd");
+            close(fd);
+            throw std::runtime_error("Failed to add listen_fd to epoll");
+        }
+    }
+
+	// main event loop :
+	const int MAX_EVENTS = 1024;
+    struct epoll_event events[MAX_EVENTS];
+	
+	while (true)
+	{
+		int n = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+		if (n < 0)
+		{
+			if (errno == EINTR){ // signals ?
+				continue ;
+			}
+			perror("epoll_wait");
+			break ;
+		}
+		for (int i = 0; i < n; ++i)
+		{
+			int fd = events[i].data.fd;
+			uint32_t ev = events[i].events;
+			if (listen_fd_set.count(fd))
+			{
+        		handleNewConnection(fd);
+    		}
+			else
+			{
+        		if (ev & EPOLLIN) {
+        		   // handleClientRead(fd); // Read request
+        		}
+        		if (ev & EPOLLOUT) {
+        		    //handleClientWrite(fd); // Write response
+        		}
+        		if (ev & (EPOLLERR | EPOLLHUP)) {
+        		    // Handle errors or closed connection
+        		}
+    		}
+			
+			//if (listen_fd_set.count(fd))
+			//{
+			//	handleNewConnection(fd);
+			//}
+			//else
+			//	handleClient(fd);
+		}
+	}
+	for (size_t i = 0; i < listen_fds.size(); ++i)
+		close(listen_fds[i]);
+	close(epoll_fd);
 }
