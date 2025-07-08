@@ -12,21 +12,22 @@
 bool validate_required_headers(const std::vector<S_Header>& headers, const std::string& method)
 {
     std::string required_headers[] = { "host", "user-agent", "accept", (method == "POST"? "content-type" : "END"), "END" };
-    for (std::vector<S_Header>::const_iterator begin = headers.begin(); begin != headers.end(); begin++)
-    {
-        bool flag = false;
-        for (int i = 0; i < 5; i++)
-        {
-            if (required_headers[i] == "END")
-                break ;
 
-            if (required_headers[i] == begin->key)
-            {
+
+    for (int i = 0; i < 5; i++)
+    {
+        if (required_headers[i] == "END")
+            break ;
+
+        bool flag = false;
+        for (std::vector<S_Header>::const_iterator begin = headers.begin(); begin != headers.end(); begin++)
+        {
+            if (required_headers[i] == begin->key && !begin->value.empty())
+            {                
                 flag = true;
                 break ;
             }
         }
-
         if (!flag)
             return (false);
     }
@@ -77,6 +78,12 @@ ParseResult HttpRequest::parse_header(std::string &header)
                 return (BadRequest);
             r_has_transfer_encoding = true;
         }
+
+        if (head.key == "host")
+            r_host = head.value;
+        if (head.key == "content-type")
+            r_content_type = head.value;
+
         r_header.push_back(head);
     }
     if (!validate_required_headers(r_header, r_method))
