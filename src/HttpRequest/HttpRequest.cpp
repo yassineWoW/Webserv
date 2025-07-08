@@ -1,7 +1,10 @@
 #include "HttpRequest.hpp"
 
 
-HttpRequest::HttpRequest():r_content_length(0), r_has_content_length(false), r_has_transfer_encoding(false), r_method(""), r_body(""), r_url(""), r_version(""), r_query(""), r_host(""), path("") { }
+HttpRequest::HttpRequest(): r_method(""), r_url(""), r_version(""),  r_query(""),  r_body(""), r_host(""), r_content_type(""), path(""), r_content_length(0), r_has_content_length(false), r_has_transfer_encoding(false) { }
+
+
+ServerConfig&   HttpRequest::getServer() { return ( this->server ); }
 
 ParseResult HttpRequest::setServer() 
 {
@@ -26,6 +29,8 @@ ParseResult HttpRequest::setServer()
     return ( OK );
 }
 
+LocationConfig& HttpRequest::getLocation() { return ( this->location ); }
+
 ParseResult HttpRequest::setLocation() 
 {
     ServerConfig& server = this->getServer();
@@ -41,12 +46,25 @@ ParseResult HttpRequest::setLocation()
             this->location = locations[i];
         }
     }
-    
+
+    if (bestPrefix > 0)
+    {
+        if (r_url.length() > location.path.length())
+        {
+            if (r_url[location.path.length()] != '/')
+                return (NotFound);
+        }
+    }
+    std::string url = r_url; url.erase(0, bestPrefix);
+    setPath(this->location.root, url);
     return ( OK );
 }
 
-ServerConfig&   HttpRequest::getServer() { return ( this->server ); }
+std::string &   HttpRequest::getPath() { return ( this->path );  }
 
-LocationConfig& HttpRequest::getLocation() { return ( this->location ); }
+void     HttpRequest::setPath(std::string &root, std::string &url) 
+{ 
+    this->path = root + (root[root.length() - 1] == '/' ? "" : "/") + (url[0] == '/' ? url.erase(0, 1) : url);
+}
 
 HttpRequest::~HttpRequest () { }
