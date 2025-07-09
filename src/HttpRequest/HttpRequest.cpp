@@ -67,4 +67,6 @@ void     HttpRequest::setPath(std::string &root, std::string &url)
     this->path = root + (root[root.length() - 1] == '/' ? "" : "/") + (url[0] == '/' ? url.erase(0, 1) : url);
 }
 
+std::string &   HttpRequest::getBody( ) { return (this->r_body); }
+
 HttpRequest::~HttpRequest () { }
