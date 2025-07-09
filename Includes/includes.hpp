@@ -43,4 +43,5 @@ enum ParseResult {
     InternalError               //15 - 500
 };
 
+int server();
 #endif

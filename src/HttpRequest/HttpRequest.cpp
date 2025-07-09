@@ -1,7 +1,7 @@
 #include "HttpRequest.hpp"
 
 
-HttpRequest::HttpRequest(): r_method(""), r_url(""), r_version(""),  r_query(""),  r_body(""), r_host(""), r_content_type(""), path(""), r_content_length(0), r_has_content_length(false), r_has_transfer_encoding(false) { }
+HttpRequest::HttpRequest(): r_buffer(""), r_current_body_size(0), r_method(""), r_url(""), r_version(""),  r_query(""),  r_body(""), r_host(""), r_content_type(""), path(""), r_content_length(0), r_has_content_length(false), r_has_transfer_encoding(false), r_status_code(OK), r_read_status(Start_Line)  { }
 
 
 ServerConfig&   HttpRequest::getServer() { return ( this->server ); }
@@ -67,6 +67,13 @@ void     HttpRequest::setPath(std::string &root, std::string &url)
     this->path = root + (root[root.length() - 1] == '/' ? "" : "/") + (url[0] == '/' ? url.erase(0, 1) : url);
 }
 
-std::string &   HttpRequest::getBody( ) { return (this->r_body); }
+E_STATUS & HttpRequest::getReadStatus( ) { return ( r_read_status ); }
+void       HttpRequest::setReadStatus( E_STATUS status ) { r_read_status = status; }
+
+size_t &        HttpRequest::getCurrentBodySize( ) { return (r_current_body_size); } ;
+void            HttpRequest::setCurrentBodySize( size_t size ) { r_current_body_size += size; } ;
+
+std::string &   HttpRequest::getBody( ) { return ( r_body ); };
+
 
 HttpRequest::~HttpRequest () { }

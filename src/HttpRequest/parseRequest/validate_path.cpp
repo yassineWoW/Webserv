@@ -32,46 +32,46 @@ ParseResult isFileAndAccessible(const std::string &path, int accessFlag)
 
 ParseResult HttpRequest::check_valid_path()
 {
-    struct stat sb;
     std::cout << "The path start!\n" << std::endl;
-    if ( stat(this->path.c_str(), &sb) == 0 && sb.st_mode & S_IFDIR) // is directory
+    ParseResult result = isDirectoryAndAccessible( this->path );
+    if ( result == OK )
     {
-        LocationConfig location = this->location;
-        
-        if (location.autoindex == true )
-        {
-            path = path + location.index;
+        std::cout << " the path is a directory!\n" << std::endl;
 
-            if (location.index.empty() || !(stat(this->path.c_str(), &sb) == 0 && S_ISREG(sb.st_mode))) {
-                // generateAutoindexHtml()
-                std::cout << "call generateAutoindexHtml!\n" << std::endl;
-            }
-            else
-            {
-                if ( stat(this->path.c_str(), &sb) == 0 && !(sb.st_mode & S_IFDIR)) // is file
-                {
-                    std::cout << " the target is a index file!\n" << std::endl;
-                }
-            }
+        LocationConfig location = this->location;
+        path = path + location.index;
+        if ( isFileAndAccessible( path, R_OK ) == OK) {
+            std::cout << "the target is a index file!!\n" << std::endl;
+        } 
+        else if ( location.autoindex == true )
+        {
+            // generateAutoindexHtml()
+            std::cout << "call generateAutoindexHtml()!\n" << std::endl;
         }
         else
-            return (Forbidden);
-    }
-    else
-    {
-        size_t len = this->path.length() - 1;
-        if (this->path[len] == '/')
-            this->path.erase(len, 1);
-        if ( stat(this->path.c_str(), &sb) == 0) // is file
         {
-            std::cout << " the target is a file!\n" << std::endl;
-            
+            std::cout << "The path is not accessible (Forbidden).\n";
+            return (Forbidden);
+        }
+        
+        return ( OK );
+    }
+    else if (result == NotFound)
+    {
+        size_t len = this->path.length();
+        if (len > 0 && this->path[len - 1] == '/')
+            this->path.erase(len - 1, 1);
+        result = isFileAndAccessible( this->path, R_OK ) ;
+        if ( result == OK)
+        {
+            std::cout << " the path is a file!\n" << std::endl;
+            return ( OK );
         }
         else {
-            std::cout << "The Path is invalid!\n" << std::endl;
-            return (NotFound);
+            std::cout << " the path is nOT fOUND!\n" << std::endl;
+            return ( result ) ;
         }
     }
-    std::cout << "The Path end!\n" << std::endl;
-    return (OK);
+    std::cout << "The path is not accessible (Forbidden).\n";
+    return ( Forbidden ) ; 
 }

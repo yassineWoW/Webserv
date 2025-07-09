@@ -4,19 +4,13 @@
 #include <unistd.h>
 #include <cerrno>
 #include <cstring>
-
-#include "includes.hpp"
 #include "HttpRequest.hpp"
 
-
-
-class HttpResponse;
-
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 145445
 
 using namespace std;
 
-class HttpResponse;
+
 
 void requestTester(HttpRequest &http) 
 {
@@ -61,7 +55,7 @@ void requestTester(HttpRequest &http)
 }
 
 
-int main()
+int server()
 {
     int server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket == -1) {
@@ -95,11 +89,14 @@ int main()
         cerr << "Error: Server cannot accept connection with a client\n" << endl;
         return (1);
     }
-
-    char buffer[BUFFER_SIZE] = {0};
+    
     string request;
-    while (true) {
-        int byte_read = recv(client_socket, buffer, sizeof(buffer), 0);
+    HttpRequest http;
+    const char* response = NULL;
+
+    while (http.getReadStatus() != END) {
+        char buffer[BUFFER_SIZE] = {0};
+        int byte_read = recv(client_socket, buffer, BUFFER_SIZE, 0);
         if (byte_read == 0) {
             break ;
         }
@@ -107,49 +104,44 @@ int main()
             cerr << "Error: Failed to receive message from the client." << endl;
             return (1);
         }
-        buffer[byte_read] = '\0';
-        request += buffer;
-        if (request.find("\r\n\r\n") != string::npos)
-            break ;
+        try
+        {
+            // std::cout << "start parse" << std::endl;
+            std::string request(buffer, byte_read);
+            http.parse(request) ;
+            // std::cout << "end parse" << std::endl;
+
+        }
+        catch(const ParseResult& e)
+        {
+            if (e != OK && e != Incomplete)
+            {
+                response = "HTTP/1.1 400 BadRequest\r\n"
+                        "Content-Length: 11\r\n"
+                        "Content-Type: text/plain\r\n"
+                        "\r\n"
+                        "NOT FOUND!\n";
+                http.setReadStatus( END );
+                send(client_socket, response, strlen(response), 0);    
+                close(client_socket);
+                close(server_socket);
+                return (1);
+            }
+        }
     }
+    std::cout << "Received body:\n" << http.getBody() << std::endl;
 
-    std::cout << "Received request:\n" << request << std::endl;
-
-    HttpRequest http;
-    HttpResponse res;
-    std::vector<std::string> stored_bodies;
-    std::string response;
-    if (http.parse(request) != OK)
-    {
-        response = "HTTP/1.1 400 BadRequest\r\n"
-            "Content-Length: 11\r\n"
-            "Content-Type: text/plain\r\n"
-            "\r\n"
-            "NOT FOUND!\n";
-
-    }
-    else
-    {
-        std::cout << "Server Is [" << http.getServer().server_name << "]\n" << std::endl;
-        std::cout << "Location Is [" << http.getLocation().path << "]\n" << std::endl;
-        std::cout << "Path Is [" << http.getPath() << "]\n" << std::endl;
-
-        response = res.handle_post(http, stored_bodies);
     
-        // Output the response
-        std::cout << "Response sent to client:\n";
-        std::cout << response << std::endl;
-        // response = "HTTP/1.1 200 OK\r\n"
-        // // Call your post handler
-        // "Content-Length: 13\r\n"
-        // "Content-Type: text/plain\r\n"
-        // "\r\n"
-        // "Hello, world!";
-    }
-    std::cout << "----------------- " << response << std::endl;
+    std::cout << "Server Is [" << http.getServer().server_name << "]\n" << std::endl;
+    std::cout << "Location Is [" << http.getLocation().path << "]\n" << std::endl;
+    std::cout << "Path Is [" << http.getPath() << "]\n" << std::endl;
+    response = "HTTP/1.1 200 OK\r\n"
+    "Content-Length: 13\r\n"
+    "Content-Type: text/plain\r\n"
+    "\r\n"
+    "Hello, world!";
     
-    send(client_socket, response.c_str(), response.length(), 0);    
-    std::cout << response << std::endl;
+    send(client_socket, response, strlen(response), 0);    
     close(client_socket);
     close(server_socket);
     return (0);
