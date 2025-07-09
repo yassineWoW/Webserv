@@ -6,7 +6,7 @@
 #include <cstring>
 #include "HttpRequest.hpp"
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 25
 
 using namespace std;
 
@@ -119,7 +119,6 @@ int server()
             "Content-Type: text/plain\r\n"
             "\r\n"
             "NOT FOUND!\n";
-
     }
     else
     {
