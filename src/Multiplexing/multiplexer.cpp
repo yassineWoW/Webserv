@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 21:46:09 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/08 14:14:22 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/08 18:25:45 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,23 +50,90 @@ int Multiplexer::SetupServerSocket(int port)
 	return listen_fd;
 }
 
-void Multiplexer::handleClient(int client_fd)
+void Multiplexer::modifyEpollEvents(int fd, uint32_t events)
+{
+    struct epoll_event ev;
+    ev.events = events;
+    ev.data.fd = fd;
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, fd, &ev) < 0) {
+        perror("epoll_ctl: mod");
+        // Optionally handle error: close fd, erase client state, etc.
+    }
+}
+
+void Multiplexer::handleClientRead(int client_fd) 
 {
 	char buf[4096];
 	ssize_t n = recv(client_fd, buf, sizeof(buf), 0);
-	if (n <= 0)
+	if (n == 0)
 	{
 		close(client_fd);
 		client_states.erase(client_fd);
 		return ;
+	}
+	if (n < 0)
+	{
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+			return ;
+		perror("recv error");
+		close(client_fd);
+    	client_states.erase(client_fd);
 	}
 	ClientState &state = client_states[client_fd];
 	state.buffer.append(buf, n);
 	if (state.buffer.find("\r\n\r\n") != std::string::npos)
 	{
 		state.request_complete = true;
-		// wa soufyan: parse and handle the request!! ;
+		// wa soufyan: parse and handle the request and prepare respons here!!;
+		if (state.request_complete)
+			modifyEpollEvents(client_fd, EPOLLOUT);
 	}
+}
+
+void Multiplexer::handleClientWrite(int client_fd)
+{
+    ClientState &state = client_states[client_fd];
+    // Make sure there is something to send
+    if (state.response_buffer.empty()) {
+        // Nothing to send, switch back to EPOLLIN
+        modifyEpollEvents(client_fd, EPOLLIN);
+        return;
+    }
+
+    ssize_t n = send(client_fd, state.response_buffer.c_str(), state.response_buffer.size(), 0);
+   if (n < 0)
+   {
+    if (errno == EAGAIN || errno == EWOULDBLOCK)
+	{
+        // Socket not ready for writing, try again later
+        return;
+    }
+    	perror("send");
+    	close(client_fd);
+    	client_states.erase(client_fd);
+    	return;
+	}
+
+    // Remove sent data from the buffer
+    state.response_buffer.erase(0, n);
+
+    if (state.response_buffer.empty())
+	{
+        // All data sent!
+        if (state.keep_alive)
+		{
+            // If keep-alive, switch back to EPOLLIN for next request
+            state.request_complete = false;
+            state.buffer.clear();
+            modifyEpollEvents(client_fd, EPOLLIN);
+        }
+		else
+		{
+            // Otherwise, close connection
+            close(client_fd);
+            client_states.erase(client_fd);
+        }
+    }
 }
 
 void	Multiplexer::handleNewConnection(int listen_fd)
@@ -149,22 +216,21 @@ void 	Multiplexer::run()
 			else
 			{
         		if (ev & EPOLLIN) {
-        		   // handleClientRead(fd); // Read request
+        		   handleClientRead(fd); // Read request
         		}
         		if (ev & EPOLLOUT) {
-        		    //handleClientWrite(fd); // Write response
+        		    handleClientWrite(fd); // Write response
         		}
-        		if (ev & (EPOLLERR | EPOLLHUP)) {
-        		    // Handle errors or closed connection
+        		if (ev & (EPOLLERR | EPOLLHUP))
+				{
+					perror("epoll error or hangup");
+					epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL); // Remove from epoll
+    				close(fd);                                    // Close the socket
+    				client_states.erase(fd);                      // Remove client state
+    				continue ;
+					// Handle errors or closed connection
         		}
     		}
-			
-			//if (listen_fd_set.count(fd))
-			//{
-			//	handleNewConnection(fd);
-			//}
-			//else
-			//	handleClient(fd);
 		}
 	}
 	for (size_t i = 0; i < listen_fds.size(); ++i)
