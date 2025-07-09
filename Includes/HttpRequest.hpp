@@ -1,34 +1,14 @@
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
 
+
 #include "includes.hpp"
+#include "HttpResponse.hpp"
 #include "cfileparser.hpp"
 
 struct S_Header {
     std::string key;
     std::string value;
-};
-
-enum ParseResult {
-    OK,                         // 0 - Success
-    Incomplete,                 // 1 - Waiting for more data (not an error)
-    // Common 4xx client-side errors
-    BadRequest,                 // 2 - 400
-    NotAllowed,                 // 3 - 405
-    LengthRequired,             // 4 - 411
-    PayloadTooLarge,            // 5 - 413
-    URITooLong,                 // 6 - 414
-    UnsupportedMediaType,       // 7 - 415
-    HeaderFieldsTooLarge,       // 8 - 431
-    NotFound,                   // 9 - 404
-    Forbidden,                  //10 - 403
-    Gone,                       //11 - 410
-    Conflict,                   //12 - 409
-    RequestTimeout,             //13 - 408
-
-    // Server-side errors
-    HTTPVersionNotSupported,    //14 - 505
-    InternalError               //15 - 500
 };
 
 
@@ -60,6 +40,8 @@ class HttpRequest
         void            setPath( std::string &root, std::string &url ) ;
         std::string &   getPath( ) ;
         ParseResult     check_valid_path( ) ;
+        std::string &   getBody( ) ;
+
 };
 
 bool        find_and_get(std::string &request, std::string &dest, std::string delimeter) ;
