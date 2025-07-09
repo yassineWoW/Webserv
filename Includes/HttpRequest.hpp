@@ -1,7 +1,9 @@
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
 
+
 #include "includes.hpp"
+#include "HttpResponse.hpp"
 #include "cfileparser.hpp"
 
 struct S_Header {
@@ -73,6 +75,8 @@ class HttpRequest
         void            setCurrentBodySize( size_t size ) ;
         std::string &   getBody( ) ;
         ParseResult     check_valid_path( ) ;
+        std::string &   getBody( ) ;
+
 };
 
 bool        find_and_get(std::string &request, std::string &dest, std::string delimeter) ;

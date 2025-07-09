@@ -7,7 +7,7 @@ CPPFILES_Y = $(addprefix src/Multiplexing/, multiplexer.cpp  cfileparser.cpp) $(
 CPPFILES_S = $(addprefix src/HttpRequest/, HttpRequest.cpp) \
 	$(addprefix src/HttpRequest/parseRequest/, parseRequest.cpp r_body.cpp r_header.cpp r_start_line.cpp validate_path.cpp helpers.cpp server.cpp)
 
-CPPFILES_A = $(addprefix src/, )
+CPPFILES_A = $(addprefix src/POST/, post_handler.cpp)
 
 CPPINCLUDES = $(addprefix Includes/, multiplexer.hpp cfileparser.hpp includes.hpp)
 
