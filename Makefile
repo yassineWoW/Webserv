@@ -1,6 +1,6 @@
 CXX = c++
 
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -IIncludes
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -IIncludes -fsanitize=address -g3
 
 CPPFILES_Y = $(addprefix src/Multiplexing/, multiplexer.cpp  cfileparser.cpp) $(addprefix src/, main.cpp)
 
