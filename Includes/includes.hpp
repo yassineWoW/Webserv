@@ -18,5 +18,5 @@
 #include <fcntl.h>
 #include <climits>
 #include <sys/stat.h>
-
+int server();
 #endif
