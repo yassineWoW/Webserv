@@ -55,7 +55,9 @@ ParseResult HttpRequest::parse_header(std::string &header)
             return (BadRequest);
 
         if (head.key.empty() || header_invalid_chars(head.key, head.value))
-            return (BadRequest);
+        {
+            return (Conflict);
+        }
 
         if (head.key == "content-length")
         {
