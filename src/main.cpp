@@ -1,17 +1,17 @@
-// #include "multiplexer.hpp"
-// #include "cfileparser.hpp"
+#include "multiplexer.hpp"
+#include "cfileparser.hpp"
 
-// int main(int ac, char **av)
-// {
-// 	std::string config_file;
-// 	if (ac == 2)
-// 	{
-// 		config_file = (av[1]);
-// 	}
-// 	else
-// 	{
-// 		config_file = ("webserv.conf");
-// 	}
+int main(int ac, char **av)
+{
+	std::string config_file;
+	if (ac == 2)
+	{
+		config_file = (av[1]);
+	}
+	else
+	{
+		config_file = ("webserv.conf");
+	}
 	
 	try
 	{
@@ -44,5 +44,5 @@
 	}
 
 
-// 	return 0;
-// }
+	return 0;
+}
