@@ -1,7 +1,7 @@
 #include "HttpRequest.hpp"
 
 
-HttpRequest::HttpRequest(): r_buffer(""), r_current_body_size(0), r_method(""), r_url(""), r_version(""),  r_query(""),  r_body(""), r_host(""), r_content_type(""), path(""), r_content_length(0), r_has_content_length(false), r_has_transfer_encoding(false), r_status_code(OK), r_read_status(Start_Line)  { }
+HttpRequest::HttpRequest(): r_buffer(""), r_current_body_size(0), r_method(""), r_url(""), r_version(""),  r_query(""),  r_body(""), r_host(""), r_content_type(""), path(""), r_content_length(0), r_has_content_length(false), r_has_transfer_encoding(false), r_status_code(OK), r_read_status(Start_Line), r_keep_alive(true)  { }
 
 
 ServerConfig&   HttpRequest::getServer() { return ( this->server ); }
@@ -75,5 +75,13 @@ void            HttpRequest::setCurrentBodySize( size_t size ) { r_current_body_
 
 std::string &   HttpRequest::getBody( ) { return ( r_body ); };
 
+bool &          HttpRequest::getKeepAlive( ) { return ( r_keep_alive ); } ;
+
+std::string &   HttpRequest::getContentType( ) { return ( r_content_type ); };
+
+std::string &   HttpRequest::getPath( ) { return ( path ); };
+bool &          HttpRequest::getHasContentLength( ) { return ( r_has_content_length ); };
+bool &          HttpRequest::getHasTransferEncoding( ) { return ( r_has_transfer_encoding); };
+ParseResult &   HttpRequest::getStatusCode( ) { return (  r_status_code); };
 
 HttpRequest::~HttpRequest () { }
