@@ -79,9 +79,8 @@ bool &          HttpRequest::getKeepAlive( ) { return ( r_keep_alive ); } ;
 
 std::string &   HttpRequest::getContentType( ) { return ( r_content_type ); };
 
-std::string &   HttpRequest::getPath( ) { return ( path ); };
 bool &          HttpRequest::getHasContentLength( ) { return ( r_has_content_length ); };
 bool &          HttpRequest::getHasTransferEncoding( ) { return ( r_has_transfer_encoding); };
 ParseResult &   HttpRequest::getStatusCode( ) { return (  r_status_code); };
-
+std::string &   HttpRequest::getMethod( ) { return ( r_method ); };
 HttpRequest::~HttpRequest () { }
