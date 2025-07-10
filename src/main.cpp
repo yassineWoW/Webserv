@@ -1,28 +1,27 @@
-#include "multiplexer.hpp"
-#include "cfileparser.hpp"
+ #include "multiplexer.hpp"
+ #include "cfileparser.hpp"
 
-int main(int ac, char **av)
-{
-	std::string config_file;
-	if (ac == 2)
-	{
-		config_file = (av[1]);
-	}
-	else
-	{
-		config_file = ("webserv.conf");
-	}
+ int main(int ac, char **av)
+ {
+ 	std::string config_file;
+ 	if (ac == 2)
+ 	{
+ 		config_file = (av[1]);
+ 	}
+ 	else
+ 	{
+ 		config_file = ("webserv.conf");
+ 	}
 	
 	try
 	{
 		ConfigParser *parser = ConfigParser::getInstance(config_file);
-		(void) parser;
-		// std::vector<ServerConfig> &servers = parser->getServers();
-		//Multiplexer *server = Multiplexer::getInstance();
-		//for (size_t j = 0; j < servers.size(); ++j)
-		//{
-		//	server->server_ports.push_back(servers[j].listen_port);
-		//}
+		 std::vector<ServerConfig> &servers = parser->getServers();
+		Multiplexer *server = Multiplexer::getInstance();
+		for (size_t j = 0; j < servers.size(); ++j)
+		{
+			server->server_ports.push_back(servers[j].listen_port);
+		}
 		// for (size_t i = 0; i < servers.size(); ++i) 
 		// {
 		// 	std::cout << "Server " << i << ":\n";
@@ -34,15 +33,17 @@ int main(int ac, char **av)
 		// 		std::cout << "      Index: " << servers[i].locations[j].index << "\n";
 		// 	}
 		// }
-        server();
-		//server->run();
+        //server();
+		
+	std::cout << "\033[33mWebserv listening on port " << server->server_ports[0] << "...\033[0m" << std::endl;		
+	server->run();
 	}
 	catch (const std::exception &e)
 	{
-		std::cerr << "Config file parsing error: " << e.what() << std::endl;
+		std::cerr << "Fatal error: " << e.what() << std::endl;
 		return 1;
 	}
 
 
-	return 0;
-}
+ 	return 0;
+ }

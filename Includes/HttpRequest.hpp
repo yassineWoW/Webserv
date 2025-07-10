@@ -58,10 +58,10 @@ class HttpRequest
         std::string &   getBody( ) ;
         bool &          getKeepAlive( ) ;
         std::string &   getContentType( ) ;
-        std::string &   getPath( ) ;
         bool &          getHasContentLength( ) ;
         bool &          getHasTransferEncoding( ) ;
         ParseResult &   getStatusCode( ) ;
+        std::string &   getMethod( );
         
 
 };
