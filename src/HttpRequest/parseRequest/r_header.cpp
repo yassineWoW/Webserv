@@ -9,10 +9,10 @@
     Returns true if the delimiter exists in 'request'; otherwise, returns false.
 */
 
-bool validate_required_headers(const std::vector<S_Header>& headers, const std::string& method)
+bool HttpRequest::validate_required_headers( )
 {
-    std::string required_headers[] = { "host", "user-agent", "accept", (method == "POST"? "content-type" : "END"), "END" };
-
+    std::string required_headers[] = { "host", "user-agent", "accept", (r_method == "POST"? "content-type" : "END"), "END" };
+    bool connectionFlag = false;
 
     for (int i = 0; i < 5; i++)
     {
@@ -20,8 +20,14 @@ bool validate_required_headers(const std::vector<S_Header>& headers, const std::
             break ;
 
         bool flag = false;
-        for (std::vector<S_Header>::const_iterator begin = headers.begin(); begin != headers.end(); begin++)
+        for (std::vector<S_Header>::const_iterator begin = r_header.begin(); begin != r_header.end(); begin++)
         {
+            if (!connectionFlag && begin->key == "connection")
+            {
+                if (begin->value == "close")
+                    r_keep_alive = false;
+                connectionFlag = true ;
+            }
             if (required_headers[i] == begin->key && !begin->value.empty())
             {                
                 flag = true;
@@ -31,12 +37,14 @@ bool validate_required_headers(const std::vector<S_Header>& headers, const std::
         if (!flag)
             return (false);
     }
+
     return (true);
 }
 
 
 ParseResult HttpRequest::parse_header(std::string &header)
 {
+    std::cout << header << std::endl;
     header+= "\r\n";
     while (!header.empty()) {
         S_Header head;
@@ -88,7 +96,7 @@ ParseResult HttpRequest::parse_header(std::string &header)
 
         r_header.push_back(head);
     }
-    if (!validate_required_headers(r_header, r_method))
+    if (!validate_required_headers( ))
         return (BadRequest);
     return (OK);
 }
