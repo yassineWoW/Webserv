@@ -11,29 +11,6 @@ struct S_Header {
     std::string value;
 };
 
-enum ParseResult {
-    OK = 200,                         // 0 - Success
-    Incomplete,                 // 1 - Waiting for more data (not an error)
-    // Common 4xx client-side errors
-    BadRequest = 400,                 // 2 - 400
-    NotAllowed = 405,                 // 3 - 405
-    LengthRequired = 411,             // 4 - 411
-    PayloadTooLarge = 413,            // 5 - 413
-    URITooLong = 414,                 // 6 - 414
-    UnsupportedMediaType = 415,       // 7 - 415
-    HeaderFieldsTooLarge = 431,       // 8 - 431
-    NotFound = 404,                   // 9 - 404
-    Forbidden = 403,                  //10 - 403
-    Gone = 410,                       //11 - 410
-    Conflict = 409,                   //12 - 409
-    RequestTimeout = 408,             //13 - 408
-
-    // Server-side errors
-    InternalError = 500 ,             //14 - 500
-    NotImplemented = 501,             //15 - 501
-    HTTPVersionNotSupported = 505    //16 - 505
-};
-
 enum E_STATUS { Start_Line, Header, Body, END } ; 
 
 class HttpRequest
@@ -51,6 +28,7 @@ class HttpRequest
     bool                    r_has_transfer_encoding;
     ParseResult             r_status_code;
     E_STATUS                r_read_status;
+    bool                    r_keep_alive;
     ServerConfig            server ;
     LocationConfig          location;
     public:
@@ -61,8 +39,12 @@ class HttpRequest
         ParseResult parse_body( );
         ParseResult parse_chunked_body( std::string &tmp );
         ParseResult parse_trailer_header( std::string &body );
+        bool        validate_required_headers( ) ;
+        ParseResult check_valid_path( ) ;
         ~HttpRequest( );
 
+        // Getters & Setters
+    
         ParseResult     setServer( );
         ParseResult     setLocation( );
         ServerConfig&   getServer( ) ;
@@ -74,8 +56,13 @@ class HttpRequest
         size_t &        getCurrentBodySize( ) ;
         void            setCurrentBodySize( size_t size ) ;
         std::string &   getBody( ) ;
-        ParseResult     check_valid_path( ) ;
-        std::string &   getBody( ) ;
+        bool &          getKeepAlive( ) ;
+        std::string &   getContentType( ) ;
+        std::string &   getPath( ) ;
+        bool &          getHasContentLength( ) ;
+        bool &          getHasTransferEncoding( ) ;
+        ParseResult &   getStatusCode( ) ;
+        
 
 };
 
