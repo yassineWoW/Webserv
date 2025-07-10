@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 21:46:09 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/08 18:25:45 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/09 20:13:36 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,8 @@ int Multiplexer::SetupServerSocket(int port)
 		throw std::runtime_error("Socket creation failure\n");
 	}
 	int opt = 1;
-	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt) < 0))
+	std::cout << listen_fd << "\n\n";
+	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		throw std::runtime_error("setsockopt failure");
 	sockaddr_in addr;
 
@@ -47,6 +48,7 @@ int Multiplexer::SetupServerSocket(int port)
 	}
 	if (listen(listen_fd, 10) < 0)
 		throw std::runtime_error("Listen failure");
+	std::cout << "server up on: localhost:" << port << std::endl;
 	return listen_fd;
 }
 
@@ -80,13 +82,33 @@ void Multiplexer::handleClientRead(int client_fd)
     	client_states.erase(client_fd);
 	}
 	ClientState &state = client_states[client_fd];
-	state.buffer.append(buf, n);
-	if (state.buffer.find("\r\n\r\n") != std::string::npos)
+	std::string req(buf,n);
+	try
 	{
-		state.request_complete = true;
-		// wa soufyan: parse and handle the request and prepare respons here!!;
-		if (state.request_complete)
-			modifyEpollEvents(client_fd, EPOLLOUT);
+		state.request.parse(req);
+	}
+	catch(const ParseResult& e)
+	{
+		if (e != OK && e != Incomplete)
+           {
+                state.response_buffer = "HTTP/1.1 400 BadRequest\r\n"
+                        "Content-Length: 11\r\n"
+                        "Content-Type: text/plain\r\n"
+                        "\r\n"
+                        "NOT FOUND!\n";
+                state.request.setReadStatus( END );       
+           }
+	}
+	
+	if (state.request.getReadStatus() == END)
+	{
+	    state.response_buffer = "HTTP/1.1 200 OK\r\n"
+	    "Content-Length: 13\r\n"
+	    "Content-Type: text/plain\r\n"
+	    "\r\n"
+	    "Hello, world!";
+		std::cout << "Received body:\n" << state.request.getBody() << std::endl;
+		modifyEpollEvents(client_fd, EPOLLOUT);
 	}
 }
 
@@ -138,11 +160,17 @@ void Multiplexer::handleClientWrite(int client_fd)
 
 void	Multiplexer::handleNewConnection(int listen_fd)
 {
-	int client_fd = accept(listen_fd, NULL, NULL);
-	if (client_fd < 0)
-	{
-		return ; // or throw an exception
-	}
+	sockaddr_in client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    int client_fd = accept(listen_fd, (sockaddr*)&client_addr, &client_len);
+    if (client_fd < 0)
+    {
+        return; // or throw an exception
+    }
+    char ip[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(client_addr.sin_addr), ip, INET_ADDRSTRLEN);
+    int client_port = ntohs(client_addr.sin_port);
+    std::cout << "\033[36mNEW CONNECTION FROM...  " << ip << ":" << client_port << "\033[0m" << std::endl;
 	client_states[client_fd] = ClientState();
 	int flags = fcntl(client_fd, F_GETFL, 0);
 	if (flags < 0 || fcntl(client_fd, F_SETFL, flags | O_NONBLOCK) < 0)
