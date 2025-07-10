@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 21:46:26 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/08 17:43:32 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/09 16:37:59 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 # define MULTIPLEXER_HPP
 
 #include "includes.hpp"
+#include "HttpRequest.hpp"
 
 class ClientState
 {
@@ -25,6 +26,7 @@ class ClientState
     	int cgi_pid;
     	std::string upload_path;
 		bool keep_alive;
+		HttpRequest request;
 };
 
 class Multiplexer
