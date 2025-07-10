@@ -29,18 +29,23 @@ ParseResult HttpRequest::parse_chunked_body( std::string &tmp )
     {
         std::string chunk_size;
         std::string chunk_data;
-        if (!find_and_get(body, chunk_size, "\r\n")){
+
+        if (!find_and_get(body, chunk_size, "\r\n"))
             throw (BadRequest);
-        }
+
         int size = hex_to_int(chunk_size); 
-        if (size < 0){
+        if (size < 0)
             throw (BadRequest);
-        }
+
         if (size == 0)
         {
             r_read_status = END;
-            return ( OK );
+            break ;
         }
+        
+        if (static_cast<int>(body.size()) < size + 2)  // chunk + "\r\n"
+            throw Incomplete;
+
         if (!find_and_get(body, chunk_data, "\r\n")){
             throw (BadRequest);
         }

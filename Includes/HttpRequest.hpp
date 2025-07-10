@@ -28,6 +28,7 @@ class HttpRequest
     bool                    r_has_transfer_encoding;
     ParseResult             r_status_code;
     E_STATUS                r_read_status;
+    bool                    r_keep_alive;
     ServerConfig            server ;
     LocationConfig          location;
     public:
@@ -38,8 +39,12 @@ class HttpRequest
         ParseResult parse_body( );
         ParseResult parse_chunked_body( std::string &tmp );
         ParseResult parse_trailer_header( std::string &body );
+        bool        validate_required_headers( ) ;
+        ParseResult check_valid_path( ) ;
         ~HttpRequest( );
 
+        // Getters & Setters
+    
         ParseResult     setServer( );
         ParseResult     setLocation( );
         ServerConfig&   getServer( ) ;
@@ -50,8 +55,14 @@ class HttpRequest
         void            setReadStatus( E_STATUS status ) ;
         size_t &        getCurrentBodySize( ) ;
         void            setCurrentBodySize( size_t size ) ;
-        ParseResult     check_valid_path( ) ;
         std::string &   getBody( ) ;
+        bool &          getKeepAlive( ) ;
+        std::string &   getContentType( ) ;
+        bool &          getHasContentLength( ) ;
+        bool &          getHasTransferEncoding( ) ;
+        ParseResult &   getStatusCode( ) ;
+        std::string &   getMethod( );
+        
 
 };
 
