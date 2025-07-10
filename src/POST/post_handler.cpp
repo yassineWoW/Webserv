@@ -1,4 +1,3 @@
-
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 
@@ -56,14 +55,25 @@ std::string HttpResponse::handle_post(HttpRequest& request, std::vector<std::str
     const size_t max_body_size = 1024 * 1024; // 1 MB
     
     if (body.empty())
-    return HttpResponse::create_response(BadRequest, "POST body is empty.");
+        return HttpResponse::create_response(BadRequest, "POST body is empty.");
 
     if (body.size() > max_body_size)
         return HttpResponse::create_response(PayloadTooLarge, "POST body too large.");
 
+    // Always create the file in the same folder as post_handler.cpp
+    std::ofstream outfile("post_body.txt", std::ios::app | std::ios::binary);
+    if (!outfile.is_open()) {
+        return HttpResponse::create_response(InternalError, "Failed to open file for writing.");
+    }
+    outfile.write(body.c_str(), body.size());
+    if (!outfile) {
+        return HttpResponse::create_response(InternalError, "Failed to write body to file.");
+    }
+    outfile.close();
+
     stored_bodies.push_back(body);
 
-    return HttpResponse::create_response(OK, "POST body stored in memory.");
+    return HttpResponse::create_response(OK, "POST body stored in file.");
 }
 
 
