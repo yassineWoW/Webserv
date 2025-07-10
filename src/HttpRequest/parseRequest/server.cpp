@@ -130,8 +130,8 @@ int server()
         }
     }
     std::cout << "Received body:\n" << http.getBody() << std::endl;
-
-    
+    std::cout << "keep alive= " << http.getKeepAlive() << std::endl;
+    std::cout << "content_type=" << http.getContentType() << std::endl;    
     std::cout << "Server Is [" << http.getServer().server_name << "]\n" << std::endl;
     std::cout << "Location Is [" << http.getLocation().path << "]\n" << std::endl;
     std::cout << "Path Is [" << http.getPath() << "]\n" << std::endl;
