@@ -19,8 +19,6 @@
 #include <climits>
 #include <sys/stat.h>
 
-class HttpResponse;
-class HttpRequest;
 enum ParseResult {
     OK = 200,                         // 0 - Success
     Incomplete,                 // 1 - Waiting for more data (not an error)
