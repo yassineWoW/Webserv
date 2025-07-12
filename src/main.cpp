@@ -1,6 +1,15 @@
  #include "multiplexer.hpp"
  #include "cfileparser.hpp"
 
+volatile sig_atomic_t stop_server = 0;
+
+void hanle_stop_signal(int signum)
+{
+	(void)signum;
+	stop_server = 1;
+	std::cout << "\n\033[31mSIGINT called!!\033[0m" << std::endl;
+}
+
  int main(int ac, char **av)
  {
  	std::string config_file;
@@ -12,6 +21,9 @@
  	{
  		config_file = ("webserv.conf");
  	}
+	signal(SIGPIPE, SIG_IGN);
+	signal(SIGINT, hanle_stop_signal);
+	signal(SIGTERM, hanle_stop_signal);
 	
 	try
 	{

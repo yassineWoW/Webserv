@@ -18,6 +18,7 @@
 #include <fcntl.h>
 #include <climits>
 #include <sys/stat.h>
+#include <signal.h>
 
 class HttpResponse;
 class HttpRequest;
