@@ -14,7 +14,7 @@
 # define MULTIPLEXER_HPP
 
 #include "includes.hpp"
-#include "HttpRequest.hpp"
+#include "HttpResponse.hpp"
 
 class ClientState
 {
