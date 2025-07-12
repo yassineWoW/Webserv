@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 21:46:09 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/09 20:13:36 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/11 21:26:57 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,12 @@ int Multiplexer::SetupServerSocket(int port)
 	listen_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (listen_fd < 0)
 	{
+		if(errno == EMFILE || errno == ENFILE)
+		{
+			std::cerr << "Fatal: File descriptor limit reached during socket() (errno " << errno << ")." << std::endl;
+		}
+		else
+			perror("socket");
 		throw std::runtime_error("Socket creation failure\n");
 	}
 	int opt = 1;
@@ -63,53 +69,101 @@ void Multiplexer::modifyEpollEvents(int fd, uint32_t events)
     }
 }
 
+//void Multiplexer::handleClientRead(int client_fd) 
+//{
+//	char buf[4096];
+//	ssize_t n = recv(client_fd, buf, sizeof(buf), 0);
+//	if (n == 0)
+//	{
+//		close(client_fd);
+//		client_states.erase(client_fd);
+//		return ;
+//	}
+//	if (n < 0)
+//	{
+//		if (errno == EAGAIN || errno == EWOULDBLOCK)
+//			return ;
+//		perror("recv error");
+//		close(client_fd);
+//    	client_states.erase(client_fd);
+//		return ;
+//	}
+//	ClientState &state = client_states[client_fd];
+//	state.buffer.append(buf,n);
+//	try
+//	{
+//		state.request.parse(state.buffer);
+//	}
+//	catch(const ParseResult& e)
+//	{
+//		if (e != OK && e != Incomplete)
+//           {
+//                state.response_buffer = "HTTP/1.1 400 BadRequest\r\n"
+//                        "Content-Length: 11\r\n"
+//                        "Content-Type: text/plain\r\n"
+//                        "\r\n"
+//                        "NOT FOUND!\n";
+//                state.request.setReadStatus( END );       
+//           }
+//	}
+	
+//	if (state.request.getReadStatus() == END)
+//	{
+//	    state.response_buffer = "HTTP/1.1 200 OK\r\n"
+//	    "Content-Length: 13\r\n"
+//	    "Content-Type: text/plain\r\n"
+//	    "\r\n"
+//	    "Hello, world!";
+//		std::cout << "Received body:\n" << state.request.getBody() << std::endl;
+//		modifyEpollEvents(client_fd, EPOLLOUT);
+//	}
+//}
+
 void Multiplexer::handleClientRead(int client_fd) 
 {
+    ClientState &state = client_states[client_fd];
 	char buf[4096];
-	ssize_t n = recv(client_fd, buf, sizeof(buf), 0);
-	if (n == 0)
+    while (true)
 	{
-		close(client_fd);
-		client_states.erase(client_fd);
-		return ;
-	}
-	if (n < 0)
-	{
-		if (errno == EAGAIN || errno == EWOULDBLOCK)
-			return ;
-		perror("recv error");
-		close(client_fd);
-    	client_states.erase(client_fd);
-	}
-	ClientState &state = client_states[client_fd];
-	std::string req(buf,n);
-	try
-	{
-		state.request.parse(req);
-	}
-	catch(const ParseResult& e)
-	{
-		if (e != OK && e != Incomplete)
-           {
-                state.response_buffer = "HTTP/1.1 400 BadRequest\r\n"
-                        "Content-Length: 11\r\n"
-                        "Content-Type: text/plain\r\n"
-                        "\r\n"
-                        "NOT FOUND!\n";
-                state.request.setReadStatus( END );       
-           }
-	}
-	
-	if (state.request.getReadStatus() == END)
-	{
-	    state.response_buffer = "HTTP/1.1 200 OK\r\n"
-	    "Content-Length: 13\r\n"
-	    "Content-Type: text/plain\r\n"
-	    "\r\n"
-	    "Hello, world!";
-		std::cout << "Received body:\n" << state.request.getBody() << std::endl;
-		modifyEpollEvents(client_fd, EPOLLOUT);
-	}
+        ssize_t n = recv(client_fd, buf, sizeof(buf), 0);
+        if (n == 0) {
+            close(client_fd);
+            client_states.erase(client_fd);
+            return;
+        }
+        if (n < 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                break; // No more data for now
+            perror("recv error");
+            close(client_fd);
+            client_states.erase(client_fd);
+            return;
+        }
+        state.buffer.append(buf, n);
+    }
+    try {
+        state.request.parse(state.buffer);
+    } catch(const ParseResult& e) {
+        if (e != OK && e != Incomplete) {
+            state.response_buffer = "HTTP/1.1 400 BadRequest\r\n"
+                "Content-Length: 11\r\n"
+                "Content-Type: text/plain\r\n"
+                "\r\n"
+                "NOT FOUND!\n";
+            state.request.setReadStatus(END);
+        }
+		state.buffer.clear();     
+    }
+    if (state.request.getReadStatus() == END) {
+        state.response_buffer = "HTTP/1.1 200 OK\r\n"
+            "Content-Length: 13\r\n"
+            "Content-Type: text/plain\r\n"
+            "\r\n"
+            "Hello, world!";
+        std::cout << "Received body:\n" << state.request.getBody() << std::endl;
+		state.buffer.clear();
+        modifyEpollEvents(client_fd, EPOLLOUT);
+    }
 }
 
 void Multiplexer::handleClientWrite(int client_fd)
@@ -165,7 +219,13 @@ void	Multiplexer::handleNewConnection(int listen_fd)
     int client_fd = accept(listen_fd, (sockaddr*)&client_addr, &client_len);
     if (client_fd < 0)
     {
-        return; // or throw an exception
+		if (errno == EMFILE || errno == ENFILE)
+		{
+			std::cerr << "Fatal: File descriptor limit reached during accept() (errno " << errno << ")." << std::endl;
+		}
+		else
+			perror("accept");
+		throw std::runtime_error("Accept failure"); // or throw an exception
     }
     char ip[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &(client_addr.sin_addr), ip, INET_ADDRSTRLEN);
@@ -195,8 +255,14 @@ void	Multiplexer::handleNewConnection(int listen_fd)
 void 	Multiplexer::run()
 {
 	epoll_fd = epoll_create1(EPOLL_CLOEXEC);
-    if (epoll_fd < 0) {
-        perror("epoll_create1");
+    if (epoll_fd < 0)
+	{
+		if (errno == EMFILE || errno == ENFILE)
+		{
+			std::cerr << "Fatal: File descriptor limit reached (errno " << errno << ")." << std::endl;
+		}
+		else
+			perror("epoll_create1");
         throw std::runtime_error("Failed to create epoll instance");
     }
 
