@@ -3,7 +3,6 @@
 
 
 #include "includes.hpp"
-#include "HttpResponse.hpp"
 #include "cfileparser.hpp"
 
 struct S_Header {
@@ -75,5 +74,5 @@ bool        is_invalid_value_char(unsigned char c) ;
 bool        header_invalid_chars(const std::string& key, const std::string& value) ;
 int         hex_char_to_int(char c) ;
 int         hex_to_int(const std::string& hex_str) ;
-
+ParseResult find_server_location(HttpRequest *http);
 #endif

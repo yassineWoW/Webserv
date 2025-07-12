@@ -122,6 +122,7 @@ void Multiplexer::modifyEpollEvents(int fd, uint32_t events)
 void Multiplexer::handleClientRead(int client_fd) 
 {
     ClientState &state = client_states[client_fd];
+	HttpResponse response;
 	char buf[4096];
     while (true)
 	{
@@ -150,17 +151,20 @@ void Multiplexer::handleClientRead(int client_fd)
                 "Content-Type: text/plain\r\n"
                 "\r\n"
                 "NOT FOUND!\n";
-            state.request.setReadStatus(END);
+            // state.request.setReadStatus(END);
         }
 		state.buffer.clear();     
     }
     if (state.request.getReadStatus() == END) {
-        state.response_buffer = "HTTP/1.1 200 OK\r\n"
-            "Content-Length: 13\r\n"
-            "Content-Type: text/plain\r\n"
-            "\r\n"
-            "Hello, world!";
-        std::cout << "Received body:\n" << state.request.getBody() << std::endl;
+		if ( state.request.getMethod() == "POST" )
+		{
+			std::vector<std::string> stored_bodies;
+			state.response_buffer = response.handle_post( state.request, stored_bodies);
+		}
+		else if ( state.request.getMethod() == "GET" )
+		{
+			response.handle_get(state.request, state.response_buffer);
+		}
 		state.buffer.clear();
         modifyEpollEvents(client_fd, EPOLLOUT);
     }
