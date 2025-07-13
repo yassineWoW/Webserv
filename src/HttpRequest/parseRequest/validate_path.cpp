@@ -42,11 +42,13 @@ ParseResult HttpRequest::check_valid_path()
         path = path + location.index;
         if ( isFileAndAccessible( path, R_OK ) == OK) {
             std::cout << "the target is a index file!!\n" << std::endl;
+            return ( OK );
         } 
         else if ( location.autoindex == true )
         {
             // generateAutoindexHtml()
             std::cout << "call generateAutoindexHtml()!\n" << std::endl;
+            return ( OK );
         }
         else
         {
