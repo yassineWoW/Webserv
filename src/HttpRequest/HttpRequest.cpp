@@ -11,7 +11,7 @@ ParseResult HttpRequest::setServer()
     std::vector<ServerConfig> servers = (ConfigParser::getInstance("webserv.conf"))->getServers();
     
     if (servers.size() == 0)
-    return (InternalError);
+        return ( InternalError );
     
     size_t i;
 
@@ -25,7 +25,7 @@ ParseResult HttpRequest::setServer()
     }
 
     if (i == servers.size())
-        server = servers[0];    
+        server = servers[0]; 
     return ( OK );
 }
 
@@ -55,6 +55,23 @@ ParseResult HttpRequest::setLocation()
                 return (NotFound);
         }
     }
+
+    std::vector<std::string> allowed_methods = location.allowed_methods;
+    bool flag = false;
+    for ( size_t i = 0; i < location.allowed_methods.size(); i++ )
+    {
+        if ( location.allowed_methods[i] == r_method )
+        {
+            flag = true;
+            break;
+        }
+    }
+
+    if ( !flag )
+    {
+        return ( NotAllowed );
+    }
+    
     std::string url = r_url; url.erase(0, bestPrefix);
     setPath(this->location.root, url);
     return ( OK );
