@@ -45,5 +45,14 @@ enum ParseResult {
     HTTPVersionNotSupported = 505    //16 - 505
 };
 
+template <typename T>
+std::string to_string(T value) {
+    std::ostringstream oss;
+    oss << value;
+    return oss.str();
+}
+
+ParseResult isFileAndAccessible(const std::string &path, int accessFlag);
+bool ends_with(const std::string &str, const std::string &suffix);
 int server();
 #endif

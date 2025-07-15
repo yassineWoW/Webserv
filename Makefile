@@ -5,7 +5,8 @@ CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -IIncludes -g3 #-fsanitize=address
 CPPFILES_Y = $(addprefix src/Multiplexing/, multiplexer.cpp  cfileparser.cpp) $(addprefix src/, main.cpp)
 
 CPPFILES_S = $(addprefix src/HttpRequest/, HttpRequest.cpp) \
-	$(addprefix src/HttpResponse/GET/, get_handler.cpp)\
+	$(addprefix src/HttpResponse/GET/, get_handler.cpp) \
+	$(addprefix src/Errors/, errors.cpp) \
 	$(addprefix src/HttpRequest/parseRequest/, parseRequest.cpp r_body.cpp r_header.cpp r_start_line.cpp validate_path.cpp helpers.cpp server.cpp)
 
 CPPFILES_A = $(addprefix src/HttpResponse/POST/, post_handler.cpp)

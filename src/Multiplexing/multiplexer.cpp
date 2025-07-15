@@ -148,12 +148,8 @@ void Multiplexer::handleClientRead(int client_fd)
         state.request.parse(state.buffer);
     } catch(const ParseResult& e) {
         if (e != OK && e != Incomplete) {
-            state.response_buffer = "HTTP/1.1 400 BadRequest\r\n"
-                "Content-Length: 11\r\n"
-                "Content-Type: text/plain\r\n"
-                "\r\n"
-                "NOT FOUND!\n";
-            // state.request.setReadStatus(END);
+			state.response_buffer =	HttpResponse::create_response(e, "404: Bad Request");
+            modifyEpollEvents(client_fd, EPOLLOUT);
         }
 		state.buffer.clear();     
     }
