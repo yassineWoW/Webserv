@@ -4,3 +4,10 @@ webserv
 *.tldr
 TODO
 webserv.config
+*.txt
+*.png
+*.jpg
+*.jpeg
+*.png
+/test
+
