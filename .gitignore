@@ -10,4 +10,4 @@ webserv.config
 *.jpeg
 *.png
 /test
-
+*webserv.conf
