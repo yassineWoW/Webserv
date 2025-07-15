@@ -18,6 +18,9 @@
 #include <fcntl.h>
 #include <climits>
 #include <sys/stat.h>
+#include <signal.h>
+#include <ctime>
+
 
 enum ParseResult {
     OK = 200,                         // 0 - Success
