@@ -59,10 +59,18 @@ ParseResult HttpRequest::parse( std::string buffer )
         else
             r_body += buffer;
         r_current_body_size = r_body.length();
-        result = parse_body();
+        try {
+            result = parse_body();
+        }
+        catch (const ParseResult &e)
+        {
+            throw ( e ) ;
+        }
         // std::cout << "------------body after--------"<<std::endl;
-        if (result != OK)
+        if (result != OK )
+        {
             throw ( result );
+        }
     }
 
     if ( r_read_status == END )
