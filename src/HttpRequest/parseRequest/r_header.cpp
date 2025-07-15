@@ -100,12 +100,3 @@ ParseResult HttpRequest::parse_header(std::string &header)
         return (BadRequest);
     return (OK);
 }
-
-void test()
-{
-    int i = 0;
-    while (i < 100)
-    {
-        i++;
-    }
-}
