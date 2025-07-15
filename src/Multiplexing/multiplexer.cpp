@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 21:46:09 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/12 17:30:43 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/14 19:43:54 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -123,6 +123,7 @@ void Multiplexer::modifyEpollEvents(int fd, uint32_t events)
 void Multiplexer::handleClientRead(int client_fd) 
 {
     ClientState &state = client_states[client_fd];
+	state.last_activity = time(NULL);
 	HttpResponse response;
 	char buf[4096];
     while (true)
@@ -174,6 +175,7 @@ void Multiplexer::handleClientRead(int client_fd)
 void Multiplexer::handleClientWrite(int client_fd)
 {
     ClientState &state = client_states[client_fd];
+	state.last_activity = time(NULL);
     // Make sure there is something to send
     if (state.response_buffer.empty()) {
         // Nothing to send, switch back to EPOLLIN
@@ -237,6 +239,7 @@ void	Multiplexer::handleNewConnection(int listen_fd)
     int client_port = ntohs(client_addr.sin_port);
     std::cout << "\033[36mNEW CONNECTION FROM...  " << ip << ":" << client_port << "\033[0m" << std::endl;
 	client_states[client_fd] = ClientState();
+	client_states[client_fd].last_activity = time(NULL);
 	int flags = fcntl(client_fd, F_GETFL, 0);
 	if (flags < 0 || fcntl(client_fd, F_SETFL, flags | O_NONBLOCK) < 0)
     {
@@ -257,88 +260,197 @@ void	Multiplexer::handleNewConnection(int listen_fd)
 	}
 }
 
-void 	Multiplexer::run()
+void Multiplexer::run()
 {
-	epoll_fd = epoll_create1(EPOLL_CLOEXEC);
-	if (epoll_fd < 0)
-	{
-		if (errno == EMFILE || errno == ENFILE)
+    epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+    if (epoll_fd < 0)
+    {
+        if (errno == EMFILE || errno == ENFILE)
+            std::cerr << "Fatal: File descriptor limit reached (errno " << errno << ")." << std::endl;
+        else
+            perror("epoll_create1");
+        throw std::runtime_error("Failed to create epoll instance");
+    }
+
+    std::vector<int> listen_fds;
+    std::set<int> listen_fd_set;
+    for (size_t i = 0; i < server_ports.size(); ++i)
+    {
+        int fd = SetupServerSocket(server_ports[i]);
+        listen_fds.push_back(fd);
+        listen_fd_set.insert(fd);
+
+        struct epoll_event ev;
+        ev.events = EPOLLIN;
+        ev.data.fd = fd;
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) < 0)
 		{
-			std::cerr << "Fatal: File descriptor limit reached (errno " << errno << ")." << std::endl;
-		}
-		else
-		perror("epoll_create1");
-		throw std::runtime_error("Failed to create epoll instance");
-	}
-	
-	// 2. Set up listening sockets (assuming you have a vector of ports)
-	std::vector<int> listen_fds;
-	std::set<int> listen_fd_set; // For quick lookup in is_listening_socket
-	for (size_t i = 0; i < server_ports.size(); ++i) {
-		int fd = SetupServerSocket(server_ports[i]);
-		listen_fds.push_back(fd);
-		listen_fd_set.insert(fd);
-		
-		struct epoll_event ev;
-		ev.events = EPOLLIN;
-		ev.data.fd = fd;
-		if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) < 0) {
-			perror("epoll_ctl: listen_fd");
-			close(fd);
-			throw std::runtime_error("Failed to add listen_fd to epoll");
-		}
-	}
-	
-	// main event loop :
-	const int MAX_EVENTS = 1024;
-	struct epoll_event events[MAX_EVENTS];
-	
-	while (!stop_server)
-	{
-			int n = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
-			if (n < 0)
-			{
-				if (errno == EINTR)
-                	break ;
-				if (errno == EINTR){ // signals ?
-					continue ;
-				}
-				perror("epoll_wait");
-				break ;
-			}
-			for (int i = 0; i < n; ++i)
-			{
-				int fd = events[i].data.fd;
-				uint32_t ev = events[i].events;
-				if (listen_fd_set.count(fd))
-				{
-					handleNewConnection(fd);
-				}
-				else
-				{
-					if (ev & EPOLLIN) {
-					   handleClientRead(fd); // Read request
-					}
-					if (ev & EPOLLOUT) {
-						handleClientWrite(fd); // Write response
-					}
-					if (ev & (EPOLLERR | EPOLLHUP))
-					{
-						perror("epoll error or hangup");
-						epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL); // Remove from epoll
-						close(fd);                                    // Close the socket
-						client_states.erase(fd);                      // Remove client state
-						continue ;
-						// Handle errors or closed connection
-					}
-				}
-			}
-	}
-	for (size_t i = 0; i < listen_fds.size(); ++i)
-    	close(listen_fds[i]);
-	for (std::map<int, ClientState>::iterator it = client_states.begin(); it != client_states.end(); ++it)
-    	close(it->first);
-	client_states.clear();
-	if (epoll_fd >= 0)
-    	close(epoll_fd);
+            perror("epoll_ctl: listen_fd");
+            close(fd);
+            throw std::runtime_error("Failed to add listen_fd to epoll");
+        }
+    }
+
+    const int MAX_EVENTS = 1024;
+    struct epoll_event events[MAX_EVENTS];
+    const int EPOLL_TIMEOUT_MS = 1000; // 1 second
+    const int CLIENT_TIMEOUT = 60;     // 60 seconds
+
+    while (!stop_server)
+    {
+        int n = epoll_wait(epoll_fd, events, MAX_EVENTS, EPOLL_TIMEOUT_MS);
+        if (n < 0)
+        {
+            if (errno == EINTR)
+                continue;
+            perror("epoll_wait");
+            break;
+        }
+        if (n > 0) {
+            for (int i = 0; i < n; ++i)
+            {
+                int fd = events[i].data.fd;
+                uint32_t ev = events[i].events;
+                if (listen_fd_set.count(fd))
+                {
+                    handleNewConnection(fd);
+                }
+                else
+                {
+                    if (ev & EPOLLIN)
+                        handleClientRead(fd);
+                    if (ev & EPOLLOUT)
+                        handleClientWrite(fd);
+                    if (ev & (EPOLLERR | EPOLLHUP))
+                    {
+                        perror("epoll error or hangup");
+                        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
+                        close(fd);
+                        client_states.erase(fd);
+                        continue;
+                    }
+                }
+            }
+        }
+        // Timeout check runs every second
+        time_t now = time(NULL);
+        for (std::map<int, ClientState>::iterator it = client_states.begin(); it != client_states.end(); )
+        {
+			if (now - it->second.last_activity > CLIENT_TIMEOUT)
+            {
+                close(it->first);
+                client_states.erase(it++);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
+    for (size_t i = 0; i < listen_fds.size(); ++i)
+        close(listen_fds[i]);
+    for (std::map<int, ClientState>::iterator it = client_states.begin(); it != client_states.end(); ++it)
+        close(it->first);
+    client_states.clear();
+    if (epoll_fd >= 0)
+        close(epoll_fd);
 }
+
+//void 	Multiplexer::run()
+//{
+//	epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+//	if (epoll_fd < 0)
+//	{
+//		if (errno == EMFILE || errno == ENFILE)
+//		{
+//			std::cerr << "Fatal: File descriptor limit reached (errno " << errno << ")." << std::endl;
+//		}
+//		else
+//		perror("epoll_create1");
+//		throw std::runtime_error("Failed to create epoll instance");
+//	}
+	
+//	// 2. Set up listening sockets (assuming you have a vector of ports)
+//	std::vector<int> listen_fds;
+//	std::set<int> listen_fd_set; // For quick lookup in is_listening_socket
+//	for (size_t i = 0; i < server_ports.size(); ++i)
+//	{
+//		int fd = SetupServerSocket(server_ports[i]);
+//		listen_fds.push_back(fd);
+//		listen_fd_set.insert(fd);
+		
+//		struct epoll_event ev;
+//		ev.events = EPOLLIN;
+//		ev.data.fd = fd;
+//		if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) < 0) {
+//			perror("epoll_ctl: listen_fd");
+//			close(fd);
+//			throw std::runtime_error("Failed to add listen_fd to epoll");
+//		}
+//	}
+	
+//	// main event loop :
+//	const int MAX_EVENTS = 1024;
+//	struct epoll_event events[MAX_EVENTS];
+	
+//	while (!stop_server)
+//	{
+//			int n = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+//			if (n < 0)
+//			{
+
+//				if (errno == EINTR){ // signals ?
+//					continue ;
+//				}
+//				perror("epoll_wait");
+//				break ;
+//			}
+//			for (int i = 0; i < n; ++i)
+//			{
+//				int fd = events[i].data.fd;
+//				uint32_t ev = events[i].events;
+//				if (listen_fd_set.count(fd))
+//				{
+//					handleNewConnection(fd);
+//				}
+//				else
+//				{
+//					if (ev & EPOLLIN) {
+//					   handleClientRead(fd); // Read request
+//					}
+//					if (ev & EPOLLOUT) {
+//						handleClientWrite(fd); // Write response
+//					}
+//					if (ev & (EPOLLERR | EPOLLHUP))
+//					{
+//						perror("epoll error or hangup");
+//						epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL); // Remove from epoll
+//						close(fd);                                    // Close the socket
+//						client_states.erase(fd);                      // Remove client state
+//						continue ;
+//						// Handle errors or closed connection
+//					}
+//				}
+//			}
+//	//		time_t now = time(NULL);
+//    //for (std::map<int, ClientState>::iterator it = client_states.begin(); it != client_states.end(); )
+//    //{
+//    //    if (now - it->second.last_activity > CLIENT_TIMEOUT)
+//    //    {
+//    //        close(it->first);
+//    //        client_states.erase(it++);
+//    //    }
+//    //    else
+//    //    {
+//    //        ++it;
+//    //    }
+//    //}
+//	}
+//	for (size_t i = 0; i < listen_fds.size(); ++i)
+//    	close(listen_fds[i]);
+//	for (std::map<int, ClientState>::iterator it = client_states.begin(); it != client_states.end(); ++it)
+//    	close(it->first);
+//	client_states.clear();
+//	if (epoll_fd >= 0)
+//    	close(epoll_fd);
+//}

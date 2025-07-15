@@ -49,6 +49,8 @@ void hanle_stop_signal(int signum)
 		
 	std::cout << "\033[33mWebserv listening on port " << server->server_ports[0] << "...\033[0m" << std::endl;		
 	server->run();
+	delete server;
+	ConfigParser::destroyInstance();
 	}
 	catch (const std::exception &e)
 	{

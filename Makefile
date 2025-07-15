@@ -1,6 +1,6 @@
 CXX = c++
 
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -IIncludes -fsanitize=address -g3
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -IIncludes -g3 #-fsanitize=address 
 
 CPPFILES_Y = $(addprefix src/Multiplexing/, multiplexer.cpp  cfileparser.cpp) $(addprefix src/, main.cpp)
 
@@ -23,6 +23,7 @@ $(NAME) : $(OFILES) $(CPPINCLUDES)
 
 clean :
 	@rm -rf $(OFILES)
+	@rm -rf post_body.txt
 
 fclean : clean
 	@rm -rf $(NAME)
