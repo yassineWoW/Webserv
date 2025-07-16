@@ -36,11 +36,10 @@ ParseResult HttpRequest::setLocation()
     ServerConfig& server = this->getServer();
     std::vector<LocationConfig> locations = server.locations;
     size_t i, bestPrefix = 0;
-
     for (i = 0; i < locations.size(); i++)
     {
         std::string current_path = locations[i].path;
-        if ( r_url.compare(0, current_path.length(), current_path) == 0 && current_path.length() >= bestPrefix )
+        if ( r_url.compare(0, current_path.length(), current_path) == 0 && current_path.length() >= bestPrefix )  // /student   /studen/index.html
         {
             bestPrefix = current_path.length();
             this->location = locations[i];
@@ -49,10 +48,12 @@ ParseResult HttpRequest::setLocation()
 
     if (bestPrefix > 0)
     {
-        if (r_url.length() > location.path.length())
+        if (r_url.length() > location.path.length()) // /student   /studen/index.html
         {
-            if (r_url[location.path.length()] != '/')
-                return (NotFound);
+            if (r_url[location.path.length() - 1] != '/')
+            {
+                return ( NotFound );
+            }
         }
     }
 
@@ -99,8 +100,8 @@ std::string &   HttpRequest::getContentType( ) { return ( r_content_type ); };
 bool &                       HttpRequest::getHasContentLength( ) { return ( r_has_content_length ); };
 bool &                       HttpRequest::getHasTransferEncoding( ) { return ( r_has_transfer_encoding); };
 ParseResult &                HttpRequest::getStatusCode( ) { return (  r_status_code); };
+std::string &                HttpRequest::getUri( ) { return ( r_url ); };
 std::string &                HttpRequest::getMethod( ) { return ( r_method ); };
 bool &                       HttpRequest::getAutoIndex( ) { return ( r_auto_index ); };
 std::vector<std::string> &   HttpRequest::getAutoIndexFiles( ) { return ( r_auto_index_files ); };
-
 HttpRequest::~HttpRequest () { }
