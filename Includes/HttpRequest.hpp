@@ -14,22 +14,24 @@ enum E_STATUS { Start_Line, Header, Body, END } ;
 
 class HttpRequest
 {
-    std::string             r_buffer;
-    size_t                  r_current_body_size;
-    std::string             r_method, r_url, r_version, r_query;
-    std::vector<S_Header>   r_header;
-    std::string             r_body;
-    std::string             r_host;
-    std::string             r_content_type;
-    std::string             path;
-    unsigned int            r_content_length;
-    bool                    r_has_content_length;
-    bool                    r_has_transfer_encoding;
-    ParseResult             r_status_code;
-    E_STATUS                r_read_status;
-    bool                    r_keep_alive;
-    ServerConfig            server ;
-    LocationConfig          location;
+    std::string                 r_buffer;
+    size_t                      r_current_body_size;
+    std::string                 r_method, r_url, r_version, r_query;
+    std::vector<S_Header>       r_header;
+    std::string                 r_body;
+    std::string                 r_host;
+    std::string                 r_content_type;
+    std::string                 path;
+    std::vector<std::string>    r_auto_index_files;
+    bool                        r_auto_index;
+    unsigned int                r_content_length;
+    bool                        r_has_content_length;
+    bool                        r_has_transfer_encoding;
+    ParseResult                 r_status_code;
+    E_STATUS                    r_read_status;
+    bool                        r_keep_alive;
+    ServerConfig                server ;
+    LocationConfig              location;
     public:
         HttpRequest( );
         ParseResult parse( std::string request );
@@ -40,27 +42,32 @@ class HttpRequest
         ParseResult parse_trailer_header( std::string &body );
         bool        validate_required_headers( ) ;
         ParseResult check_valid_path( ) ;
+        ParseResult generateAutoindexHtml ( ) ;
         ~HttpRequest( );
 
         // Getters & Setters
     
-        ParseResult     setServer( );
-        ParseResult     setLocation( );
-        ServerConfig&   getServer( ) ;
-        LocationConfig& getLocation( ) ;
-        void            setPath( std::string &root, std::string &url ) ;
-        std::string &   getPath( ) ;
-        E_STATUS &      getReadStatus( ) ;
-        void            setReadStatus( E_STATUS status ) ;
-        size_t &        getCurrentBodySize( ) ;
-        void            setCurrentBodySize( size_t size ) ;
-        std::string &   getBody( ) ;
-        bool &          getKeepAlive( ) ;
-        std::string &   getContentType( ) ;
-        bool &          getHasContentLength( ) ;
-        bool &          getHasTransferEncoding( ) ;
-        ParseResult &   getStatusCode( ) ;
-        std::string &   getMethod( );
+        ParseResult                  setServer( );
+        ParseResult                  setLocation( );
+        ServerConfig&                getServer( ) ;
+        LocationConfig&              getLocation( ) ;
+        void                         setPath( std::string &root, std::string &url ) ;
+        std::string &                getPath( ) ;
+        E_STATUS &                   getReadStatus( ) ;
+        void                         setReadStatus( E_STATUS status ) ;
+        size_t &                     getCurrentBodySize( ) ;
+        void                         setCurrentBodySize( size_t size ) ;
+        std::string &                getBody( ) ;
+        bool &                       getKeepAlive( ) ;
+        std::string &                getContentType( ) ;
+        bool &                       getHasContentLength( ) ;
+        bool &                       getHasTransferEncoding( ) ;
+        ParseResult &                getStatusCode( ) ;
+        std::string &                getMethod( );
+        std::string &                getUri( );
+        bool &                       getAutoIndex( );
+        std::vector<std::string> &   getAutoIndexFiles( );
+
         
 
 };

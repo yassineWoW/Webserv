@@ -18,6 +18,7 @@
 #include <fcntl.h>
 #include <climits>
 #include <sys/stat.h>
+#include <dirent.h>
 #include <signal.h>
 #include <ctime>
 
