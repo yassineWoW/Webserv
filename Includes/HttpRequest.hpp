@@ -64,6 +64,7 @@ class HttpRequest
         bool &                       getHasTransferEncoding( ) ;
         ParseResult &                getStatusCode( ) ;
         std::string &                getMethod( );
+        std::string &                getUri( );
         bool &                       getAutoIndex( );
         std::vector<std::string> &   getAutoIndexFiles( );
 
