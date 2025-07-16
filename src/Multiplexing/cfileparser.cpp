@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/02 18:13:25 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/15 19:52:32 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/16 19:47:29 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,10 +18,10 @@ ConfigParser *ConfigParser::instance = NULL;
 ConfigParser::ConfigParser(const std::string &filename)
 {
 	std::ifstream file(filename.c_str());
-	if (!file) {
-    std::cerr << "Could not open config file: " << filename << std::endl;
-    	return;
-		}
+	if (!file)
+	{
+    	throw std::runtime_error("Could not open config file: " + filename);
+	}
 	std::stringstream buffer;
 	buffer << file.rdbuf();
 	
@@ -185,10 +185,17 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
 void	ConfigParser::parse_port(ServerConfig &server, size_t i, std::vector<std::string> tokens)
 {
 	if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-		throw std::runtime_error("Syntax error: 'listen' directive must end with ';'");
-	server.listen_port = atoi(tokens[i + 1].c_str());
-	if (server.listen_port < 1 || server.listen_port > 65535)
-		throw std::runtime_error("Invalid Port value");
+        throw std::runtime_error("Syntax error: 'listen' directive must end with ';'");
+    std::string port_str = tokens[i + 1];
+    int port = 0;
+    std::stringstream ss(port_str);
+    ss >> port;
+    // Check for conversion failure or leftover characters
+    if (ss.fail() || !ss.eof())
+        throw std::runtime_error("Invalid Port value");
+    if (port < 1 || port > 65535)
+        throw std::runtime_error("Invalid port: must be a number between 1 and 65535");
+    server.listen_port = port;
 }
 
 void ConfigParser::parse_name(ServerConfig &server, size_t i, std::vector<std::string> tokens)
@@ -210,14 +217,19 @@ void ConfigParser::parse_name(ServerConfig &server, size_t i, std::vector<std::s
 void ConfigParser::parse_error_code(ServerConfig &server, size_t i, std::vector<std::string> tokens)
 {
 	if (i + 3 >= tokens.size() || tokens[i + 3] != ";")
-		throw std::runtime_error("Syntax error: 'error_page' directive must be: error_page <code> <path>;");
-	int code = atoi(tokens[i + 1].c_str());
-	std::string path = tokens[i + 1];
-	if (code < 400 || code > 599)
-		throw std::runtime_error("error_page code must be between 400 and 599");
-	if (path.empty())
-		throw std::runtime_error("error_page path cannot be empty!");
-	server.error_pages[code] = tokens[i + 2];
+        throw std::runtime_error("Syntax error: 'error_page' directive must be: error_page <code> <path>;");
+    std::string code_str = tokens[i + 1];
+    int code = 0;
+    std::stringstream ss(code_str);
+    ss >> code;
+    if (ss.fail() || !ss.eof())
+        throw std::runtime_error("Invalid error_page code: must be a number between 400 and 599");
+    if (code < 400 || code > 599)
+        throw std::runtime_error("error_page code must be between 400 and 599");
+    std::string path = tokens[i + 2];
+    if (path.empty())
+        throw std::runtime_error("error_page path cannot be empty!");
+    server.error_pages[code] = path;
 }
 
 void ConfigParser::parse_max_body_size(ServerConfig &server, size_t i, std::vector<std::string> tokens)
