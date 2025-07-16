@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 21:46:26 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/09 16:37:59 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/12 21:09:51 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@ class ClientState
     	std::string upload_path;
 		bool keep_alive;
 		HttpRequest request;
+		time_t last_activity;
 };
 
 class Multiplexer

@@ -3,6 +3,9 @@
 webserv
 *.tldr
 TODO
+<<<<<<< HEAD
+webserv.conf
+=======
 webserv.config
 *.txt
 *.png
@@ -11,3 +14,4 @@ webserv.config
 *.png
 /test
 /webserv.conf
+>>>>>>> 4d8e0bb7658167fa558754b505f89e8f0b93f5a6

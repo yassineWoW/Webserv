@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/02 18:13:25 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/04 20:09:44 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/15 19:52:32 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,10 +89,16 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
 	
 	location.path = tokens[i + 1];
 	i += 3;
+
+	bool root_found = false, index_found = false, autoindex_found = false, cgi_pass_found = false, upload_path_found = false, return_found = false;
+    std::set<std::string> allowed_methods_set;
 	while (tokens[i] != "}" && i < tokens.size())
 	{
 		if (tokens[i] == "root")
 		{
+			if (root_found)
+                throw std::runtime_error("Duplicate 'root' directive in location block: " + location.path);
+            root_found = true;
 			if (tokens.size() <= i + 2 || tokens[i + 2] != ";")
 				throw std::runtime_error("Syntax error: 'root' directive must end with a ';'");
 			location.root = tokens[i + 1];
@@ -100,6 +106,9 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
 		}
 		else if (tokens[i] == "index")
 		{
+			if (index_found)
+                throw std::runtime_error("Duplicate 'index' directive in location block: " + location.path);
+            index_found = true;
 			if (tokens.size() <= i + 2 || tokens[i + 2] != ";")
 				throw std::runtime_error("Syntax error: 'index' directive must end with a ';'");
 			location.index = tokens[i + 1];
@@ -107,6 +116,9 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
 		}
 		else if (tokens[i] == "autoindex")
 		{
+			if (autoindex_found)
+                throw std::runtime_error("Duplicate 'autoindex' directive in location block: " + location.path);
+            autoindex_found = true;
 			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
                 throw std::runtime_error("Syntax error: 'autoindex' directive must end with ';'");
             location.autoindex = (tokens[i + 1] == "on");
@@ -117,7 +129,9 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
             i++;
             while (i < tokens.size() && tokens[i] != ";")
 			{
-                location.allowed_methods.push_back(tokens[i]);
+                 if (!allowed_methods_set.insert(tokens[i]).second)
+                    throw std::runtime_error("Duplicate allowed_method in location block: " + tokens[i]);
+				location.allowed_methods.push_back(tokens[i]);
                 i++;
             }
             if (i == tokens.size() || tokens[i] != ";")
@@ -126,6 +140,9 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
         }
 		else if (tokens[i] == "cgi_pass")
 		{
+			if (cgi_pass_found)
+                throw std::runtime_error("Duplicate 'cgi_pass' directive in location block: " + location.path);
+            cgi_pass_found = true;
 			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
 				throw std::runtime_error("Syntax error: 'cgi_pass' directive must end with ';'");
 			location.cgi_pass = tokens[i + 1];
@@ -133,6 +150,9 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
 		}
 		else if (tokens[i] == "upload_path")
 		{
+			 if (upload_path_found)
+                throw std::runtime_error("Duplicate 'upload_path' directive in location block: " + location.path);
+            upload_path_found = true;
 			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
 				throw std::runtime_error("Syntax error: 'upload_path' directive must end with ';'");
 			location.upload_path = tokens[i + 1];
@@ -140,7 +160,10 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
 		}
 		else if (tokens[i] == "return")
 		{
-            if (i + 3 >= tokens.size() || tokens[i + 3] != ";")
+            if (return_found)
+                throw std::runtime_error("Duplicate 'return' directive in location block: " + location.path);
+            return_found = true;
+			if (i + 3 >= tokens.size() || tokens[i + 3] != ";")
                 throw std::runtime_error("Syntax error: 'return' directive must be: return <code> <url>;");
             location.redirection_code = tokens[i + 1];
             location.redirection_url = tokens[i + 2];
@@ -159,6 +182,75 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
 }
 
 
+void	ConfigParser::parse_port(ServerConfig &server, size_t i, std::vector<std::string> tokens)
+{
+	if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
+		throw std::runtime_error("Syntax error: 'listen' directive must end with ';'");
+	server.listen_port = atoi(tokens[i + 1].c_str());
+	if (server.listen_port < 1 || server.listen_port > 65535)
+		throw std::runtime_error("Invalid Port value");
+}
+
+void ConfigParser::parse_name(ServerConfig &server, size_t i, std::vector<std::string> tokens)
+{
+	if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
+		throw std::runtime_error("Syntax error: 'server_name' directive must end with a ';'");
+	std::string name = tokens[i + 1];
+	if (name.empty())
+		throw std::runtime_error("server_name cannot be empty!");
+	for (size_t c = 0; c < name.size(); ++c)
+	{
+		char ch = name[c];
+		if (!std::isalnum(ch) && ch != '.' && ch != '-')
+			throw std::runtime_error("server_name contains invalid characters!" + name);
+	}
+	server.server_name = tokens[i + 1];
+}
+
+void ConfigParser::parse_error_code(ServerConfig &server, size_t i, std::vector<std::string> tokens)
+{
+	if (i + 3 >= tokens.size() || tokens[i + 3] != ";")
+		throw std::runtime_error("Syntax error: 'error_page' directive must be: error_page <code> <path>;");
+	int code = atoi(tokens[i + 1].c_str());
+	std::string path = tokens[i + 1];
+	if (code < 400 || code > 599)
+		throw std::runtime_error("error_page code must be between 400 and 599");
+	if (path.empty())
+		throw std::runtime_error("error_page path cannot be empty!");
+	server.error_pages[code] = tokens[i + 2];
+}
+
+void ConfigParser::parse_max_body_size(ServerConfig &server, size_t i, std::vector<std::string> tokens)
+{
+	if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
+		throw std::runtime_error("Syntax error: 'client_max_body_size' directive must end with ';'");
+	std::string value = tokens[i + 1];
+	size_t size = 0;
+	if (value.size() >= 2 && isdigit(value[0]))
+	{
+		size_t num_end = value.find_first_not_of("0123456789");
+		std::string num_str = value.substr(0, num_end);
+		std::string suffix = value.substr(num_end);
+		std::stringstream ss(num_str);
+		ss >> size;
+		if (ss.fail() || size == 0)
+			throw std::runtime_error("client_max_body_size must be a positive integer");
+		if (suffix == "KB")
+			size *= 1024;
+		else if (suffix == "MB")
+			size *= 1024 * 1024;
+		else if (suffix == "GB")
+			size *= 1024 * 1024 * 1024;
+		else if (!suffix.empty())
+			throw std::runtime_error("Unknown size suffix for client_max_body_size");
+		if (size > 2 * 1024 * 1024)
+			throw std::runtime_error("client_max_body_size is too large (max is 2MB)");
+	}
+	else
+		throw std::runtime_error("Invalid client_max_body_size value");
+	server.client_max_body_size = size;
+}
+
 std::vector<ServerConfig> ConfigParser::parse(const std::vector<std::string> tokens)
 {
 	std::vector<ServerConfig> servers;
@@ -175,42 +267,54 @@ std::vector<ServerConfig> ConfigParser::parse(const std::vector<std::string> tok
                 throw std::runtime_error("Syntax error: 'server' block not opened with '{'");
             ServerConfig server;
             i = j + 1;
-            while (i < tokens.size() && tokens[i] != "}")
+            bool listen_found = false;
+			bool server_name_found = false;
+			bool cmbs = false;
+			std::set<int> error_codes;
+			std::set<std::string> location_paths;
+			while (i < tokens.size() && tokens[i] != "}")
 			{
 				if (tokens[i] == "listen")
 				{
-					if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-						throw std::runtime_error("Syntax error: 'listen' directive must end with ';'");
-					server.listen_port = atoi(tokens[i + 1].c_str());
+					if (listen_found)
+            			throw std::runtime_error("Duplicate 'listen' directive in the same server block");
+        			listen_found = true;
+					parse_port(server, i, tokens);
 					i += 3;
                 }
 				else if (tokens[i] == "server_name")
 				{
-					if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-						throw std::runtime_error("Syntax error: 'server_name' directive must end with a ';'");
-					server.server_name = tokens[i + 1];
+					if (server_name_found)
+						throw std::runtime_error("Duplicate 'server_name' directive in the same server block");
+					server_name_found = true;
+					parse_name(server, i,tokens);
 					i += 3;
 				}
 				else if (tokens[i] == "error_page")
 				{
-					if (i + 3 >= tokens.size() || tokens[i + 3] != ";")
-						throw std::runtime_error("Syntax error: 'error_page' directive must be: error_page <code> <path>;");
 					int code = atoi(tokens[i + 1].c_str());
-					server.error_pages[code] = tokens[i + 2];
+					if (!error_codes.insert(code).second)
+						throw std::runtime_error("Duplicate error_page code in the same server block: " + tokens[i + 1]);
+					parse_error_code(server ,i , tokens);
 					i += 4;
                 }
 				else if (tokens[i] == "client_max_body_size")
 				{
-					if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-						throw std::runtime_error("Syntax error: 'client_max_body_size' directive must end with ';'");
-					server.client_max_body_size = atoi(tokens[i + 1].c_str());
+					if (cmbs)
+						throw std::runtime_error("Duplicate client max body size in the same server block");
+					cmbs = true;
+					parse_max_body_size(server, i, tokens);
 					i += 3;
                 }
 				else if (tokens[i] == "location")
 				{
+					std::string path = tokens[i + 1];
+					if (!location_paths.insert(path).second)
+						throw std::runtime_error("Duplicate location path in the same server block: " + path);
 					LocationConfig location;
-					i = parse_location(tokens, i, location);
+					size_t new_i = parse_location(tokens, i, location);
 					server.locations.push_back(location);
+					i = new_i;
 				}
 				else
 				{
@@ -221,12 +325,51 @@ std::vector<ServerConfig> ConfigParser::parse(const std::vector<std::string> tok
 			}
 			if (i == tokens.size())
 				throw std::runtime_error("Syntax error: 'server' block not closed with a '}'");
+			for (size_t s = 0; s < servers.size(); ++s)
+			{
+			    if (servers[s].listen_port == server.listen_port) {
+			        std::ostringstream oss;
+			        oss << "Duplicate listen port in config: " << server.listen_port;
+			        throw std::runtime_error(oss.str());
+			    }
+			    if (servers[s].server_name == server.server_name) {
+			        std::ostringstream oss;
+			        oss << "Duplicate server_name in config: " << server.server_name;
+			        throw std::runtime_error(oss.str());
+			    }
+			}
+			std::set<int> error_codes1;
+			for (std::map<int, std::string>::const_iterator it = server.error_pages.begin(); it != server.error_pages.end(); ++it)
+			{
+			    if (!error_codes1.insert(it->first).second)
+			    {
+			        std::ostringstream oss;
+			        oss << "Duplicate error_page code in config: " << it->first;
+			        throw std::runtime_error(oss.str());
+			    }
+			}
+			std::set<std::string> location_paths1;
+			for (size_t l = 0; l < server.locations.size(); ++l)
+			{
+			    if (!location_paths1.insert(server.locations[l].path).second)
+			        throw std::runtime_error("Duplicate location path in server: " + server.locations[l].path);
+			}
 			servers.push_back(server);
 		}
 		++i;
 	}
 	return (servers);
 }
+
+void ConfigParser::destroyInstance()
+{
+	if (instance)
+	{
+		delete instance;
+		instance = NULL;
+	}
+}
+
 
 //void mainparser()
 //{
