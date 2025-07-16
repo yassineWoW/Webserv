@@ -12,9 +12,23 @@ static std::string getResponseType( const std::string& path ) {
     if (ends_with(path, ".js")) return "application/javascript";
     if (ends_with(path, ".jpg")) return "image/jpeg";
     if (ends_with(path, ".png")) return "image/png";
-    return "application/octet-stream";
+    return "text/html";
 }
 
+
+void handle_auto_index_response(HttpRequest& request, std::string &body)
+{
+    std::vector<std::string>& files = request.getAutoIndexFiles();
+
+    std::string html = "<!DOCTYPE html><html><head><title>Index of " + request.getPath() + 
+                       "</title></head><body><h1>Index of " + request.getPath() + "</h1><ul>";
+
+    for (size_t i = 0; i < files.size(); ++i) {
+        body += "<li><a href=\"" + request.getPath() + files[i] + "\">" + files[i] + "</a></li>";
+    }
+
+    body += "</ul></body></html>";
+}
 
 void    HttpResponse::handle_get(HttpRequest& request, std::string &response)
 {
@@ -36,19 +50,24 @@ void    HttpResponse::handle_get(HttpRequest& request, std::string &response)
         }
         else
         {
-            std::ifstream file(request.getPath().c_str(), std::ios::binary);
-            std::ostringstream contentStream;
-            contentStream << file.rdbuf();
-            std::string body = contentStream.str();
-
-
+            std::string body = "";
+            if ( request.getAutoIndex() == true )
+                handle_auto_index_response( request, body );
+            else
+            {
+                std::ifstream file(request.getPath().c_str(), std::ios::binary);
+                std::ostringstream contentStream;
+                contentStream << file.rdbuf();
+                std::string body = contentStream.str();
+            }
             response = "HTTP/1.1 200 OK\r\n";
             response += "Content-Type: " + getResponseType(request.getPath()) + "\r\n";
             size_t len = body.size();
             response += "Content-Length: " + to_string(len) + "\r\n";
             response += "Connection: close\r\n";
             response += "\r\n";
-            response += body;
+            response += body; 
+
         }
     }    
 }
