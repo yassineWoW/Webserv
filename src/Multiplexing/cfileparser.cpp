@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/02 18:13:25 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/16 19:47:29 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/17 17:41:04 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,10 +18,10 @@ ConfigParser *ConfigParser::instance = NULL;
 ConfigParser::ConfigParser(const std::string &filename)
 {
 	std::ifstream file(filename.c_str());
-	if (!file)
-	{
-    	throw std::runtime_error("Could not open config file: " + filename);
-	}
+	if (!file) {
+    std::cerr << "Could not open config file: " << filename << std::endl;
+    	return;
+		}
 	std::stringstream buffer;
 	buffer << file.rdbuf();
 	
@@ -86,14 +86,20 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
 {
 	if (tokens.size() <= i + 2 || tokens[i + 2] != "{")
 		throw std::runtime_error("Syntax error: 'location' block must be followed by a path and a '{'");
-	
 	location.path = tokens[i + 1];
+	if (location.path.empty() || location.path[0] != '/')
+        throw std::runtime_error("Invalid location path: must start with '/' and not be empty");
 	i += 3;
 
 	bool root_found = false, index_found = false, autoindex_found = false, cgi_pass_found = false, upload_path_found = false, return_found = false;
-    std::set<std::string> allowed_methods_set;
+    bool allowed_methods_found = false;
+	std::set<std::string> allowed_methods_set;
 	while (tokens[i] != "}" && i < tokens.size())
 	{
+		if (tokens[i] == "location" || tokens[i] == "server")
+		{
+        	throw std::runtime_error("Syntax error: 'location' block not closed with '}' before starting new block");
+    	}
 		if (tokens[i] == "root")
 		{
 			if (root_found)
@@ -102,6 +108,8 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
 			if (tokens.size() <= i + 2 || tokens[i + 2] != ";")
 				throw std::runtime_error("Syntax error: 'root' directive must end with a ';'");
 			location.root = tokens[i + 1];
+			if (location.root.empty() || location.root[0] != '/')
+                throw std::runtime_error("Invalid root path in location block: " + location.path);
 			i += 3;
 		}
 		else if (tokens[i] == "index")
@@ -112,6 +120,8 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
 			if (tokens.size() <= i + 2 || tokens[i + 2] != ";")
 				throw std::runtime_error("Syntax error: 'index' directive must end with a ';'");
 			location.index = tokens[i + 1];
+			if (location.index.empty())
+                throw std::runtime_error("index cannot be empty in location block: " + location.path);
 			i += 3;
 		}
 		else if (tokens[i] == "autoindex")
@@ -119,19 +129,27 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
 			if (autoindex_found)
                 throw std::runtime_error("Duplicate 'autoindex' directive in location block: " + location.path);
             autoindex_found = true;
-			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
+            if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
                 throw std::runtime_error("Syntax error: 'autoindex' directive must end with ';'");
+            if (tokens[i + 1] != "on" && tokens[i + 1] != "off")
+                throw std::runtime_error("autoindex must be 'on' or 'off' in location block: " + location.path);
             location.autoindex = (tokens[i + 1] == "on");
             i += 3;
 		}
 		else if (tokens[i] == "allowed_methods")
 		{
+            if (allowed_methods_found)
+                throw std::runtime_error("Duplicate 'allowed_methods' directive in location block: " + location.path);
+            allowed_methods_found = true;
+            std::set<std::string> allowed;
             i++;
-            while (i < tokens.size() && tokens[i] != ";")
-			{
-                 if (!allowed_methods_set.insert(tokens[i]).second)
-                    throw std::runtime_error("Duplicate allowed_method in location block: " + tokens[i]);
-				location.allowed_methods.push_back(tokens[i]);
+            while (i < tokens.size() && tokens[i] != ";") {
+                std::string method = tokens[i];
+                if (method != "GET" && method != "POST" && method != "DELETE")
+                    throw std::runtime_error("Invalid HTTP method in allowed_methods: " + method);
+                if (!allowed.insert(method).second)
+                    throw std::runtime_error("Duplicate HTTP method in allowed_methods: " + method);
+                location.allowed_methods.push_back(method);
                 i++;
             }
             if (i == tokens.size() || tokens[i] != ";")
@@ -140,33 +158,48 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
         }
 		else if (tokens[i] == "cgi_pass")
 		{
-			if (cgi_pass_found)
+            if (cgi_pass_found)
                 throw std::runtime_error("Duplicate 'cgi_pass' directive in location block: " + location.path);
             cgi_pass_found = true;
-			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-				throw std::runtime_error("Syntax error: 'cgi_pass' directive must end with ';'");
-			location.cgi_pass = tokens[i + 1];
-			i += 3;
-		}
+            if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
+                throw std::runtime_error("Syntax error: 'cgi_pass' directive must end with ';'");
+            location.cgi_pass = tokens[i + 1];
+            if (location.cgi_pass.empty() || location.cgi_pass[0] != '/')
+                throw std::runtime_error("Invalid cgi_pass path in location block: " + location.path);
+            i += 3;
+        }
 		else if (tokens[i] == "upload_path")
 		{
-			 if (upload_path_found)
+            if (upload_path_found)
                 throw std::runtime_error("Duplicate 'upload_path' directive in location block: " + location.path);
             upload_path_found = true;
+			if (tokens[i + 1].empty() || tokens[i + 1] == ";")
+			    throw std::runtime_error("upload_path value cannot be empty in location block: " + location.path);
 			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-				throw std::runtime_error("Syntax error: 'upload_path' directive must end with ';'");
+    			throw std::runtime_error("Syntax error: 'upload_path' directive must end with ';'");
 			location.upload_path = tokens[i + 1];
+			if (location.upload_path[0] != '/')
+			    throw std::runtime_error("Invalid upload_path in location block: " + location.path);
 			i += 3;
-		}
+        }
 		else if (tokens[i] == "return")
 		{
             if (return_found)
                 throw std::runtime_error("Duplicate 'return' directive in location block: " + location.path);
             return_found = true;
-			if (i + 3 >= tokens.size() || tokens[i + 3] != ";")
+            if (i + 3 >= tokens.size() || tokens[i + 3] != ";")
                 throw std::runtime_error("Syntax error: 'return' directive must be: return <code> <url>;");
+            // Strict numeric check for code
+            std::string code_str = tokens[i + 1];
+            int code = 0;
+            std::stringstream ss(code_str);
+            ss >> code;
+            if (ss.fail() || !ss.eof() || code < 300 || code > 399)
+                throw std::runtime_error("Invalid return code in location block: " + code_str);
             location.redirection_code = tokens[i + 1];
             location.redirection_url = tokens[i + 2];
+            if (location.redirection_url.empty())
+                throw std::runtime_error("Redirection URL cannot be empty in location block: " + location.path);
             i += 4;
         }
 		else
@@ -177,7 +210,7 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
 		}
 	}
 	if (tokens.size() == i)
-		throw std::runtime_error("Syntax error: 'location' block not closed with '}");
+		throw std::runtime_error("Syntax error: 'location' block not closed with }'");
 	return (i + 1);
 }
 
@@ -185,17 +218,10 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
 void	ConfigParser::parse_port(ServerConfig &server, size_t i, std::vector<std::string> tokens)
 {
 	if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
-        throw std::runtime_error("Syntax error: 'listen' directive must end with ';'");
-    std::string port_str = tokens[i + 1];
-    int port = 0;
-    std::stringstream ss(port_str);
-    ss >> port;
-    // Check for conversion failure or leftover characters
-    if (ss.fail() || !ss.eof())
-        throw std::runtime_error("Invalid Port value");
-    if (port < 1 || port > 65535)
-        throw std::runtime_error("Invalid port: must be a number between 1 and 65535");
-    server.listen_port = port;
+		throw std::runtime_error("Syntax error: 'listen' directive must end with ';'");
+	server.listen_port = atoi(tokens[i + 1].c_str());
+	if (server.listen_port < 1 || server.listen_port > 65535)
+		throw std::runtime_error("Invalid Port value");
 }
 
 void ConfigParser::parse_name(ServerConfig &server, size_t i, std::vector<std::string> tokens)
@@ -217,19 +243,14 @@ void ConfigParser::parse_name(ServerConfig &server, size_t i, std::vector<std::s
 void ConfigParser::parse_error_code(ServerConfig &server, size_t i, std::vector<std::string> tokens)
 {
 	if (i + 3 >= tokens.size() || tokens[i + 3] != ";")
-        throw std::runtime_error("Syntax error: 'error_page' directive must be: error_page <code> <path>;");
-    std::string code_str = tokens[i + 1];
-    int code = 0;
-    std::stringstream ss(code_str);
-    ss >> code;
-    if (ss.fail() || !ss.eof())
-        throw std::runtime_error("Invalid error_page code: must be a number between 400 and 599");
-    if (code < 400 || code > 599)
-        throw std::runtime_error("error_page code must be between 400 and 599");
-    std::string path = tokens[i + 2];
-    if (path.empty())
-        throw std::runtime_error("error_page path cannot be empty!");
-    server.error_pages[code] = path;
+		throw std::runtime_error("Syntax error: 'error_page' directive must be: error_page <code> <path>;");
+	int code = atoi(tokens[i + 1].c_str());
+	std::string path = tokens[i + 1];
+	if (code < 400 || code > 599)
+		throw std::runtime_error("error_page code must be between 400 and 599");
+	if (path.empty())
+		throw std::runtime_error("error_page path cannot be empty!");
+	server.error_pages[code] = tokens[i + 2];
 }
 
 void ConfigParser::parse_max_body_size(ServerConfig &server, size_t i, std::vector<std::string> tokens)
