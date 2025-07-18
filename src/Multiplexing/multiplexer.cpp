@@ -154,7 +154,6 @@ void Multiplexer::handleClientRead(int client_fd)
 		state.buffer.clear();     
     }
     if (state.request.getReadStatus() == END) {
-        std::cout << "----------END["<<state.request.getMethod()<<"]--------------" <<std::endl;
 		if ( state.request.getMethod() == "POST" )
 		{
 			std::vector<std::string> stored_bodies;

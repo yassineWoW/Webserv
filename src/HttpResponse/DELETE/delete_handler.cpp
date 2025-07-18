@@ -35,7 +35,7 @@ void    HttpResponse::handle_delete(HttpRequest& request, std::string &response)
             else
             {
                 std::string body = "";
-                std::remove( request.getPath().c_str() );
+                std::remove( path.c_str() );
                 ParseResult Pathresult = isFileAndAccessible( request.getPath(), R_OK );
                 if (Pathresult == NotFound)
                 {
