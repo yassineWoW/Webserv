@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/02 18:13:25 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/17 17:41:04 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/17 18:04:44 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -209,6 +209,8 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
 			throw std::runtime_error(oss.str());
 		}
 	}
+	if (!root_found && !cgi_pass_found)
+    	throw std::runtime_error("Each location block must have at least a 'root' or 'cgi_pass' directive: " + location.path);
 	if (tokens.size() == i)
 		throw std::runtime_error("Syntax error: 'location' block not closed with }'");
 	return (i + 1);
