@@ -54,6 +54,7 @@ std::string to_string(T value) {
 }
 
 ParseResult isFileAndAccessible(const std::string &path, int accessFlag);
+ParseResult isDirectoryAndAccessible(const std::string &path);
 bool ends_with(const std::string &str, const std::string &suffix);
-int server();
+std::string create_res(ParseResult code, std::string body, std::string path);
 #endif

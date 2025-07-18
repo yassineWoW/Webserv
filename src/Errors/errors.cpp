@@ -34,7 +34,7 @@ std::map<ParseResult, std::pair<int, std::string> > create_errors_map()
 }
 
 
-std::string create_response(ParseResult code, std::string body, std::string path)
+std::string create_res(ParseResult code, std::string body, std::string path)
 {
     static std::map<ParseResult, std::pair<int, std::string> > status_map = create_errors_map();
     
@@ -86,22 +86,19 @@ std::string Errors::handle_error ( std::map<int, std::string> error_pages, Parse
     {
         if (isFileAndAccessible( error_page->second , R_OK) == OK)
         {
-            std::cout << "--------isFileAndAccessible----------" <<std::endl;
-
             std::ifstream file(error_page->second .c_str(), std::ios::binary);
             std::ostringstream contentStream;
             contentStream << file.rdbuf();
             body = contentStream.str();
-            response = create_response( status, body, error_page->second);
+            response = create_res( status, body, error_page->second);
         }
         else
         {
-            std::cout << "--------else----------" <<std::endl;
-            response = create_response( status, body, ".html");
+            response = create_res( status, body, ".html");
         }
     }
     else
-        response = create_response( status, body, ".html");
+        response = create_res( status, body, ".html");
     std::cout << response <<std::endl;
     return ( response );
 };

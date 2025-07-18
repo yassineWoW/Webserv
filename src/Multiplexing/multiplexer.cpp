@@ -39,7 +39,7 @@ int Multiplexer::SetupServerSocket(int port)
 		throw std::runtime_error("Socket creation failure\n");
 	}
 	int opt = 1;
-	std::cout << listen_fd << "\n\n";
+	// std::cout << listen_fd << "\n\n";
 	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		throw std::runtime_error("setsockopt failure");
 	sockaddr_in addr;
@@ -162,6 +162,10 @@ void Multiplexer::handleClientRead(int client_fd)
 		else if ( state.request.getMethod() == "GET" )
 		{
 			response.handle_get(state.request, state.response_buffer);
+		}
+		else if ( state.request.getMethod() == "DELETE" )
+		{
+			response.handle_delete(state.request, state.response_buffer);
 		}
 		state.buffer.clear();
         modifyEpollEvents(client_fd, EPOLLOUT);
