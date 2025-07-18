@@ -58,6 +58,8 @@ ParseResult HttpRequest::setLocation()
     }
 
     std::vector<std::string> allowed_methods = location.allowed_methods;
+    if ( allowed_methods.empty() )
+        return ( OK );
     bool flag = false;
     for ( size_t i = 0; i < location.allowed_methods.size(); i++ )
     {

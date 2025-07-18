@@ -11,6 +11,7 @@ class HttpResponse {
         static std::string create_response(ParseResult code, const std::string &body);
         std::string handle_post(HttpRequest& request, std::vector<std::string>& stored_bodies);
         void        handle_get(HttpRequest& request, std::string &response);
+        void        handle_delete(HttpRequest& request, std::string &response);
 
 };
 

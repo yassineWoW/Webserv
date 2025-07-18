@@ -8,6 +8,7 @@ ParseResult find_server_location(HttpRequest *http)
     result = http->setLocation();
     if ( result != OK )
         return (result);
+    std::cout <<  "--------------------" << http->getServer().server_name << std::endl;
     return ( OK ); // setLocation --> find the best location based on request URI, and return ParseResult
 }
 
