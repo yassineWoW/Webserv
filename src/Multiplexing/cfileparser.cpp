@@ -28,6 +28,7 @@ ConfigParser::ConfigParser(const std::string &filename)
 	std::string content = buffer.str();
 	std::vector<std::string> tokens = ConfigParser::tokenize(content);
 	servers = ConfigParser::parse(tokens);
+	
 }
 
 ConfigParser *ConfigParser::getInstance(const std::string& filename)

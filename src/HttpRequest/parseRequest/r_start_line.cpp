@@ -9,6 +9,16 @@
     Returns true if the delimiter exists in 'request'; otherwise, returns false.
 */
 
+ParseResult contains_path_traversal( std::string &uri )
+{
+    if ( uri.find("..") != std::string::npos )
+        return ( Forbidden ) ;
+    size_t index = uri.find("/./");
+    if ( index != std::string::npos )
+        uri.erase(index, 2);
+    return ( OK );
+}
+
 ParseResult validate_path(std::string &path)
 {
     size_t len = path.length() - 1;
@@ -30,7 +40,7 @@ ParseResult validate_path(std::string &path)
             i--;
         }
     }
-    return ( OK );
+    return ( contains_path_traversal ( path ) );
 }
 
 ParseResult HttpRequest::parse_start_line(std::string &start_line)
@@ -57,8 +67,5 @@ ParseResult HttpRequest::parse_start_line(std::string &start_line)
         r_query = url;
     }
 
-    if (validate_path(r_url) != OK)
-        return (BadRequest);
-    
-    return (OK);
+    return ( validate_path(r_url) );
 }
