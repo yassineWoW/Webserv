@@ -30,6 +30,18 @@ void handle_auto_index_response(HttpRequest& request, std::string &body)
     body += "</ul></body></html>";
 }
 
+void    handle_redirection(HttpRequest& request, std::string &response)
+{
+    const std::string CODE = request.getLocation().redirection_code;
+    const std::string URL = request.getLocation().redirection_url;
+
+    response = "HTTP/1.1 " + CODE + " Moved\r\n";
+    response += "Content-Type: " + getResponseType( request.getPath() ) + "\r\n";
+    response += "Location: " + URL + "\r\n";
+    response += "Connection: close\r\n";
+    response += "\r\n";
+}
+
 void    HttpResponse::handle_get(HttpRequest& request, std::string &response)
 {
 
@@ -42,6 +54,11 @@ void    HttpResponse::handle_get(HttpRequest& request, std::string &response)
     }
     else
     {
+        if ( !request.getLocation().redirection_code.empty() )
+        {
+            handle_redirection( request, response ) ;
+            return ;
+        }
         ParseResult Pathresult = request.check_valid_path( );
         if ( Pathresult != OK)
         {   

@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/02 18:13:25 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/19 18:08:14 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/17 18:04:44 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ ConfigParser::ConfigParser(const std::string &filename)
 	std::string content = buffer.str();
 	std::vector<std::string> tokens = ConfigParser::tokenize(content);
 	servers = ConfigParser::parse(tokens);
+	
 }
 
 ConfigParser *ConfigParser::getInstance(const std::string& filename)
