@@ -1,6 +1,6 @@
-#include "HttpRequest.hpp"
+// #include "HttpRequest.hpp"
+#include "cfileparser.hpp"
 #include "HttpResponse.hpp"
-
 
 static std::map<ParseResult, std::pair<int, std::string> > create_status_map() 
 {
@@ -24,6 +24,21 @@ static std::map<ParseResult, std::pair<int, std::string> > create_status_map()
     return m;
 }
 
+static std::string mime_to_extension(const std::string& mime) {
+    if (mime == "text/plain") return ".txt";
+    if (mime == "text/html") return ".html";
+    if (mime == "application/json") return ".json";
+    if (mime == "application/xml") return ".xml";
+    if (mime == "image/png") return ".png";
+    if (mime == "image/jpeg") return ".jpg";
+    if (mime == "image/gif") return ".gif";
+    // if (mime == "application/pdf") return ".pdf";
+    size_t slash_pos = mime.find('/');
+    if (slash_pos != std::string::npos && slash_pos + 1 < mime.size()) {
+        return "." + mime.substr(slash_pos + 1);
+    }
+    return ".bin";
+}
 
 std::string HttpResponse::create_response(ParseResult code, const std::string& body)
 {
@@ -43,7 +58,7 @@ std::string HttpResponse::create_response(ParseResult code, const std::string& b
     response << "Content-Length: " << body.length() << "\r\n";
     response << "Content-Type: text/plain\r\n";
     response << "\r\n";
-    response << body;
+    // response << body;
     
     return response.str();
 }
@@ -52,7 +67,34 @@ std::string HttpResponse::create_response(ParseResult code, const std::string& b
 std::string HttpResponse::handle_post(HttpRequest& request, std::vector<std::string>& stored_bodies)
 {
     const std::string& body = request.getBody();   
+    std::cout << "-----------------------------------------" << std::endl;
+    std::cout << request.getContentType() << std::endl;
+    std::cout << "-----------------------------------------" << std::endl;
     const size_t max_body_size = 1024 * 1024; // 1 MB
+    std::time_t rawTime;
+    std::time(&rawTime);
+    std::tm *timeInfo = std::localtime(&rawTime);
+
+    std::ostringstream filenameStream;
+    filenameStream << "file_";
+    filenameStream << (1900 + timeInfo->tm_year);
+    if (timeInfo->tm_mon + 1 < 10) filenameStream << "0";
+    filenameStream << (timeInfo->tm_mon + 1);
+    if (timeInfo->tm_mday < 10) filenameStream << "0";
+    filenameStream << timeInfo->tm_mday << "_";
+
+    if (timeInfo->tm_hour < 10) filenameStream << "0";
+    filenameStream << timeInfo->tm_hour;
+    if (timeInfo->tm_min < 10) filenameStream << "0";
+    filenameStream << timeInfo->tm_min;
+    if (timeInfo->tm_sec < 10) filenameStream << "0";
+    filenameStream << timeInfo->tm_sec;
+
+    // Get extension from Content-Type
+    std::string extension = mime_to_extension(request.getContentType());
+    filenameStream << extension;
+
+    std::string filename = filenameStream.str();
     
     if (body.empty())
         return HttpResponse::create_response(BadRequest, "POST body is empty.");
@@ -61,7 +103,7 @@ std::string HttpResponse::handle_post(HttpRequest& request, std::vector<std::str
         return HttpResponse::create_response(PayloadTooLarge, "POST body too large.");
 
     // Always create the file in the same folder as post_handler.cpp
-    std::ofstream outfile("post_body.txt", std::ios::app | std::ios::binary);
+    std::ofstream outfile(filename.c_str(), std::ios::app | std::ios::binary);
     if (!outfile.is_open()) {
         return HttpResponse::create_response(InternalError, "Failed to open file for writing.");
     }
