@@ -15,12 +15,23 @@ void    HttpResponse::handle_delete(HttpRequest& request, std::string &response)
         std::string path = request.getPath();
         if ( !path.empty() && path[path.length() - 1] == '/' )
             path.erase( path.size() - 1 );
-        ParseResult Pathresult = isFileAndAccessible( path, W_OK );
+
+        ParseResult Pathresult = isDirectoryAndAccessible( path );
+        if ( Pathresult != NotFound)
+        {
+            Errors errors;
+            response = errors.handle_error( request.getServer().error_pages, Forbidden ) ;
+            return ;
+        }
+
+        Pathresult = isFileAndAccessible( path, W_OK );
+
         if ( Pathresult != OK)
         {
             std::cout << "isFileAndAccessible("<< path << " , W_OK );" <<std::endl;
             Errors errors;
             response = errors.handle_error( request.getServer().error_pages, Pathresult ) ;
+            return ;
         }
         else
         {
