@@ -25,7 +25,9 @@ ParseResult HttpRequest::setServer()
     }
 
     if (i == servers.size())
-        server = servers[0]; 
+    {
+        return ( BadRequest ) ;
+    }
     return ( OK );
 }
 
