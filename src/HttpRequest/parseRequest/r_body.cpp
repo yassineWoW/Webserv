@@ -25,27 +25,20 @@ ParseResult HttpRequest::parse_trailer_header( std::string &body )
 
 ParseResult HttpRequest::parse_chunked_body( std::string &tmp )
 {
-
-    if (r_body.find("0\r\n") == std::string::npos){
-        throw ( Incomplete );
-    }
     std::string body = r_body;
 
-    while (!body.empty())
+    while ( r_read_status != END )
     {
         std::string chunk_size;
         std::string chunk_data = "";
 
-        if (!find_and_get(body, chunk_size, "\r\n"))
-        {
-            throw (BadRequest);
-        }
+        if (!find_and_get( body, chunk_size, "\r\n" ) )
+            throw ( Incomplete );
         
         int size = hex_to_int(chunk_size); 
+
         if (size < 0)
-        {
             throw (BadRequest);
-        }
         
         if (size == 0)
         {
@@ -54,16 +47,25 @@ ParseResult HttpRequest::parse_chunked_body( std::string &tmp )
         }
         
         if (static_cast<int>(body.size()) < size + 2)  // chunk + "\r\n"
-            throw Incomplete;
+        {
+            throw ( Incomplete );
+
+        }
+
         if (body[size] != '\r' || body[size + 1] != '\n')
-            throw (BadRequest);
-        tmp.append(body, 0, size);      
+            throw ( BadRequest );
+
+        tmp.append(body, 0, size); 
         body.erase(0, size + 2);
     }
     
     ParseResult res = parse_trailer_header(body);
+    find_and_get( body, body, "\r\n" );
     if (!body.empty())
+    {
+        std::cout << "bad" << std::endl;
         throw (BadRequest);
+    }
     return res;
 }
 
@@ -75,6 +77,8 @@ ParseResult HttpRequest::parse_body()
     if (r_has_transfer_encoding)
     {   
         this->parse_chunked_body( tmp );
+        r_body = tmp;
+        return ( OK );
     }
     // else if (r_has_content_length == true && r_body.length() < r_content_length)
     //     throw (BadRequest);
@@ -82,12 +86,6 @@ ParseResult HttpRequest::parse_body()
     {
         throw (Incomplete);
     }
-    else
-    {
-        tmp = r_body;
-    }
-
-    r_body = tmp;
 
     if (check_repeated_key(r_header) != OK) // check if there is a duplicate of keys (some keys should not be duplicate)
         throw (BadRequest);

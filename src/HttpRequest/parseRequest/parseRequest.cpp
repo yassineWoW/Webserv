@@ -56,10 +56,17 @@ ParseResult HttpRequest::parse( std::string buffer )
     {
         // std::cout << "------------body start--------"<<std::endl;
         if ( r_body.empty() )
+        {
             r_body = r_buffer;
+            r_current_body_size += r_buffer.length();
+
+        }
         else
+        {
             r_body += buffer;
-        r_current_body_size = r_body.length();
+            r_current_body_size += buffer.length();
+        }
+
         try {
             result = parse_body();
         }
@@ -72,6 +79,7 @@ ParseResult HttpRequest::parse( std::string buffer )
         {
             throw ( result );
         }
+
     }
 
     if ( r_read_status == END )
