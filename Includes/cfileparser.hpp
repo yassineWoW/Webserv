@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/02 18:13:39 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/15 19:29:56 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/20 19:55:35 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,7 @@ struct ServerConfig
 	std::vector<LocationConfig> locations;
 	std::map<int, std::string> error_pages;
 	size_t client_max_body_size;
+	size_t large_client_header_buffer_size;
 };
 
 

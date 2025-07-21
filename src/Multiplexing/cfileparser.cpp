@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/02 18:13:25 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/17 18:04:44 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/21 08:56:41 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -353,6 +353,30 @@ std::vector<ServerConfig> ConfigParser::parse(const std::vector<std::string> tok
 					parse_max_body_size(server, i, tokens);
 					i += 3;
                 }
+				else if (tokens[i] == "large_client_header_buffer_size")
+				{
+				    if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
+				        throw std::runtime_error("Syntax error: 'large_client_header_buffer_size' directive must be: large_client_header_buffer_size <size>;");
+				    std::string size_str = tokens[i + 1];
+				    size_t size = 0;
+				    std::string suffix;
+				    size_t pos = 0;
+				    while (pos < size_str.size() && isdigit(size_str[pos]))
+				        ++pos;
+				    std::stringstream ss(size_str.substr(0, pos));
+				    ss >> size;
+				    suffix = size_str.substr(pos);
+				    if (ss.fail() || !ss.eof() || size < 1)
+				        throw std::runtime_error("Invalid buffer size in large_client_header_buffer_size: " + size_str);
+				    if (suffix == "k" || suffix == "K")
+				        size *= 1024;
+				    else if (suffix == "m" || suffix == "M")
+				        size *= 1024 * 1024;
+				    else if (!suffix.empty())
+				        throw std::runtime_error("Unknown size suffix in large_client_header_buffer_size: " + suffix);
+				    server.large_client_header_buffer_size = size;
+				    i += 3;
+				}
 				else if (tokens[i] == "location")
 				{
 					std::string path = tokens[i + 1];
