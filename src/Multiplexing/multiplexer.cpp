@@ -144,32 +144,37 @@ void Multiplexer::handleClientRead(int client_fd)
         }
         state.buffer.append(buf, n);
     }
-    try {
+    try 
+    {
         state.request.parse(state.buffer);
-    } catch(const ParseResult& e) {
+    
+        if (state.request.getReadStatus() == END) 
+        {
+            if ( state.request.getMethod() == "POST" )
+            {
+                std::vector<std::string> stored_bodies;
+                state.response_buffer = response.handle_post( state.request, stored_bodies);
+            }
+            else if ( state.request.getMethod() == "GET" )
+            {
+                response.handle_get(state.request, state.response_buffer);
+            }
+            else if ( state.request.getMethod() == "DELETE" )
+            {
+                response.handle_delete(state.request, state.response_buffer);
+            }
+            state.buffer.clear();
+            modifyEpollEvents(client_fd, EPOLLOUT);
+        }
+    
+    } catch(const ParseResult& e) 
+    {
         if (e != OK && e != Incomplete) {
             Errors error;
             state.response_buffer = error.handle_error( state.request.getServer().error_pages, e ) ;
             modifyEpollEvents(client_fd, EPOLLOUT);
         }
 		state.buffer.clear();     
-    }
-    if (state.request.getReadStatus() == END) {
-		if ( state.request.getMethod() == "POST" )
-		{
-			std::vector<std::string> stored_bodies;
-			state.response_buffer = response.handle_post( state.request, stored_bodies);
-		}
-		else if ( state.request.getMethod() == "GET" )
-		{
-			response.handle_get(state.request, state.response_buffer);
-		}
-		else if ( state.request.getMethod() == "DELETE" )
-		{
-			response.handle_delete(state.request, state.response_buffer);
-		}
-		state.buffer.clear();
-        modifyEpollEvents(client_fd, EPOLLOUT);
     }
 }
 

@@ -52,24 +52,24 @@ ParseResult HttpRequest::check_valid_path()
     ParseResult result = isDirectoryAndAccessible( this->path );
     if ( result == OK )
     {
-        std::cout << " the path is a directory!\n" << std::endl;
-
         LocationConfig location = this->location;
         path = path + location.index;
         if ( isFileAndAccessible( path, R_OK ) == OK) {
-            // std::cout << "the target is a index file!!\n" << std::endl;
             return ( OK );
         }
+
         else if (isFileAndAccessible( path, R_OK ) == Forbidden)
             return (Forbidden);
+    
         else if ( location.autoindex == true && location.index.empty() )
         {
-            // std::cout << "call generateAutoindexHtml()!\n" << std::endl;
             std::cout << path <<std::endl;
             return ( generateAutoindexHtml() );
         }  
+
         return ( Forbidden );
     }
+
     else if (result == NotFound)
     {
         size_t len = this->path.length();
@@ -78,14 +78,12 @@ ParseResult HttpRequest::check_valid_path()
         result = isFileAndAccessible( this->path, R_OK ) ;
         if ( result == OK)
         {
-            // std::cout << " the path is a file!\n" << std::endl;
             return ( OK );
         }
         else {
-            // std::cout << " the path is nOT fOUND!\n" << std::endl;
             return ( result ) ;
         }
     }
-    // std::cout << "The path is not accessible (Forbidden).\n";
+    
     return ( Forbidden ) ; 
 }

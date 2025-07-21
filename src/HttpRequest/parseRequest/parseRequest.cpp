@@ -18,33 +18,32 @@ ParseResult HttpRequest::parse( std::string buffer )
     ParseResult result;
 
     r_buffer += buffer;
-    // std::cout << "\n\n--------------start---------------\n\n" << r_buffer << "\n\n------------------end-----------\n\n" << std::endl;
     if ( r_read_status == Start_Line )
     {
-        // std::cout << "------------Start_Line start--------"<<std::endl;
-
         if ( !find_and_get(r_buffer, start_line, "\r\n") )
             throw ( Incomplete );
         result = parse_start_line(start_line);
         if ( result != OK )
             throw ( result );
         r_read_status = Header;
-        // std::cout << "------------Start_Line end--------"<<std::endl;
-
     }
 
     if ( r_read_status == Header )
     {
-
-        // std::cout << "------------Header start--------"<<std::endl;
         if ( !find_and_get(r_buffer, header, "\r\n\r\n") )
-            throw ( Incomplete );
-        // std::cout << "------------Header after--------"<<std::endl;
+            throw ( Incomplete );  
+        try
+        {
+            result = parse_header(header);
+        }
+        catch(const ParseResult& e)
+        {
+            throw e;
+        }
         
-        // std::cout << "------------Header result[" << header << "]--------"<<std::endl;
-        result = parse_header(header);
         if ( result != OK )
             throw ( result );
+        
         if ( r_method == "GET" )
             r_read_status = END;
         else
@@ -54,7 +53,6 @@ ParseResult HttpRequest::parse( std::string buffer )
 
     if ( r_read_status == Body )
     {
-        // std::cout << "------------body start--------"<<std::endl;
         if ( r_body.empty() )
         {
             r_body = r_buffer;
@@ -66,24 +64,14 @@ ParseResult HttpRequest::parse( std::string buffer )
             r_body += buffer;
             r_current_body_size += buffer.length();
         }
-
-        try {
-            result = parse_body();
-        }
-        catch (const ParseResult &e)
-        {
-            throw ( e ) ;
-        }
-        // std::cout << "------------body after--------"<<std::endl;
+        result = parse_body();
+        
         if (result != OK )
-        {
-            throw ( result );
-        }
-
+        throw ( result );
     }
-
+    
     if ( r_read_status == END )
         return ( OK ) ;
-
+    
     return ( OK );
 }

@@ -62,10 +62,7 @@ ParseResult HttpRequest::parse_chunked_body( std::string &tmp )
     ParseResult res = parse_trailer_header(body);
     find_and_get( body, body, "\r\n" );
     if (!body.empty())
-    {
-        std::cout << "bad" << std::endl;
         throw (BadRequest);
-    }
     return res;
 }
 
