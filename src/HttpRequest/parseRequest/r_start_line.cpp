@@ -10,13 +10,11 @@
 */
 
 bool is_valid_uri(const std::string& URI) {
-    std::cout << "|||||||||||||" << URI << std::endl;
     for (size_t i = 0; i < URI.size(); i++) {
         unsigned char c = static_cast<unsigned char>(URI[i]);
         if ( is_invalid_key_char(c) ||  c == ' ')
             return false;
     }
-    std::cout << "----------------------------------" <<std::endl;
     return true;
 }
 
@@ -64,7 +62,6 @@ ParseResult HttpRequest::parse_start_line(std::string &start_line)
 
     if (!find_and_get(start_line, url, " ") || !is_valid_uri(url))
     {
-        std::cout << "========================" <<std::endl;
         throw (BadRequest);
     }
 

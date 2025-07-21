@@ -28,7 +28,6 @@ void    HttpResponse::handle_delete(HttpRequest& request, std::string &response)
 
         if ( Pathresult != OK)
         {
-            std::cout << "isFileAndAccessible("<< path << " , W_OK );" <<std::endl;
             Errors errors;
             response = errors.handle_error( request.getServer().error_pages, Pathresult ) ;
             return ;
@@ -39,7 +38,6 @@ void    HttpResponse::handle_delete(HttpRequest& request, std::string &response)
             ParseResult Pathresult = isDirectoryAndAccessible( dirPath );
             if ( Pathresult != OK)
             {
-                std::cout << "ParseResult Pathresult = isDirectoryAndAccessible( request.getPath(), W_OK );"<< std::endl;
                 Errors errors;
                 response = errors.handle_error( request.getServer().error_pages, Pathresult ) ;
             }
