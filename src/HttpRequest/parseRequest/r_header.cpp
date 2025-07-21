@@ -35,7 +35,7 @@ bool HttpRequest::validate_required_headers( )
             }
         }
         if (!flag)
-            return (false);
+            throw ( BadRequest );
     }
 
     return (true);
@@ -44,27 +44,26 @@ bool HttpRequest::validate_required_headers( )
 
 ParseResult HttpRequest::parse_header(std::string &header)
 {
-    std::cout << header << std::endl;
     header+= "\r\n";
     while (!header.empty()) {
         S_Header head;
         if (!check_valid_spaces(header, 0))
-            return (BadRequest);
+            throw (BadRequest);
 
         if (!find_and_get(header, head.key, ":"))
-            return (BadRequest);
+            throw (BadRequest);
 
         head.key = to_lower(head.key);
 
         if (!check_valid_spaces(header, 1))
-            return (BadRequest);
+            throw (BadRequest);
 
         if (!find_and_get(header, head.value, "\r\n"))
-            return (BadRequest);
+            throw (BadRequest);
 
         if (head.key.empty() || header_invalid_chars(head.key, head.value))
         {
-            return (Conflict);
+            throw ( BadRequest );
         }
 
         if (head.key == "content-length")
@@ -73,30 +72,33 @@ ParseResult HttpRequest::parse_header(std::string &header)
                 if (i == 0 && head.value[i] == ' ')
                     continue;
                 if (!std::isdigit(head.value[i]))
-                    return (BadRequest);
+                    throw (BadRequest);
             }
             long long tmp = atoll(head.value.c_str());
             if (tmp < 0 || tmp > UINT_MAX)
-                return (BadRequest);
+                throw (BadRequest);
             r_content_length = tmp;
             r_has_content_length = true;
         }
 
         if (head.key == "transfer-encoding")
         {
-            if (head.value.empty())
-                return (BadRequest);
+            if ( head.value.empty() )
+                throw (BadRequest);
             r_has_transfer_encoding = true;
         }
 
         if (head.key == "host")
-            r_host = head.value;
+        {
+            size_t index = head.value.find_last_of(":");
+            r_host = head.value.substr(0,index);
+        }
         if (head.key == "content-type")
             r_content_type = head.value;
 
         r_header.push_back(head);
     }
     if (!validate_required_headers( ))
-        return (BadRequest);
+        throw (BadRequest);
     return (OK);
 }

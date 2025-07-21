@@ -11,7 +11,7 @@ ParseResult HttpRequest::setServer()
     std::vector<ServerConfig> servers = (ConfigParser::getInstance("webserv.conf"))->getServers();
     
     if (servers.size() == 0)
-        return ( InternalError );
+        throw ( InternalError );
     
     size_t i;
 
@@ -26,7 +26,7 @@ ParseResult HttpRequest::setServer()
 
     if (i == servers.size())
     {
-        return ( BadRequest ) ;
+        throw ( BadRequest ) ;
     }
     return ( OK );
 }
@@ -54,7 +54,7 @@ ParseResult HttpRequest::setLocation()
         {
             if (r_url[location.path.length() - 1] != '/')
             {
-                return ( NotFound );
+                throw ( NotFound );
             }
         }
     }
@@ -74,7 +74,7 @@ ParseResult HttpRequest::setLocation()
 
     if ( !flag )
     {
-        return ( NotAllowed );
+        throw ( NotAllowed );
     }
     
     std::string url = r_url; url.erase(0, bestPrefix);

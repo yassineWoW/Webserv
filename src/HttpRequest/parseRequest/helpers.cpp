@@ -62,9 +62,7 @@ ParseResult check_repeated_key(std::vector<S_Header>& header)
 
 bool is_invalid_key_char(unsigned char c) 
 {
-    if (std::iscntrl(c)) return (true); // [0-31]|127)
-    if (c >= 128) return (true);
-    return false;
+    return std::iscntrl(c) || c >= 128;
 }
 
 bool is_invalid_value_char(unsigned char c) 
@@ -79,12 +77,12 @@ bool header_invalid_chars(const std::string& key, const std::string& value)
 {
     for (std::string::size_type i = 0; i < key.size(); ++i) {
         unsigned char c = static_cast<unsigned char>(key[i]);
-        if (is_invalid_key_char(c)) return true;
+        if ( is_invalid_key_char(c) ) return true;
     }
 
     for (std::string::size_type i = 0; i < value.size(); ++i) {
         unsigned char c = static_cast<unsigned char>(value[i]);
-        if (is_invalid_value_char(c)) return true;
+        if ( is_invalid_value_char(c) ) return true;
     }
     return false;
 }
