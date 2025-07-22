@@ -68,6 +68,8 @@ ParseResult HttpRequest::parse_chunked_body( std::string &tmp )
 
 ParseResult HttpRequest::parse_body()
 {
+    if ( r_method != "POST" )
+        return ( OK );
     std::string tmp = "";
     if (!r_body.empty() && !r_has_content_length && !r_has_transfer_encoding) // there is a body but there is not content-length and no transfere-encoding
         return (BadRequest);

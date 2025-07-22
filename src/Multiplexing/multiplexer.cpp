@@ -147,9 +147,12 @@ void Multiplexer::handleClientRead(int client_fd)
     try 
     {
         state.request.parse(state.buffer);
-    
         if (state.request.getReadStatus() == END) 
         {
+            ParseResult server_result = match_server_location( state.request,  state.response_buffer);
+            if ( server_result != OK)
+                throw ( server_result );
+
             if ( state.request.getMethod() == "POST" )
             {
                 std::vector<std::string> stored_bodies;
