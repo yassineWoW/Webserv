@@ -50,9 +50,10 @@ ParseResult HttpRequest::setLocation()
 
     if (bestPrefix > 0)
     {
-        if (r_url.length() > location.path.length()) // /student   /studen/index.html
+        if (r_url.length() > location.path.length()) // /student/   /student/index.html
         {
-            if (r_url[location.path.length() - 1] != '/')
+            int len = (location.path[location.path.length() - 1] == '/' ? location.path.length() - 1 : location.path.length());
+            if (r_url[ len ] != '/')
             {
                 throw ( NotFound );
             }
