@@ -72,14 +72,15 @@ class HttpRequest
 
 };
 
-bool        find_and_get(std::string &request, std::string &dest, std::string delimeter) ;
-bool        check_valid_spaces(std::string &to_check, int authorized_space_number) ;
-std::string to_lower(std::string header) ;
-ParseResult check_repeated_key(std::vector<S_Header>& header) ;
-bool        is_invalid_key_char(unsigned char c) ;
-bool        is_invalid_value_char(unsigned char c) ;
-bool        header_invalid_chars(const std::string& key, const std::string& value) ;
-int         hex_char_to_int(char c) ;
-int         hex_to_int(const std::string& hex_str) ;
-ParseResult find_server_location(HttpRequest *http);
+bool            find_and_get(std::string &request, std::string &dest, std::string delimeter) ;
+bool            check_valid_spaces(std::string &to_check, int authorized_space_number) ;
+std::string     to_lower(std::string header) ;
+ParseResult     check_repeated_key(std::vector<S_Header>& header) ;
+bool            is_invalid_key_char(unsigned char c) ;
+bool            is_invalid_value_char(unsigned char c) ;
+bool            header_invalid_chars(const std::string& key, const std::string& value) ;
+int             hex_char_to_int(char c) ;
+int             hex_to_int(const std::string& hex_str) ;
+ParseResult     match_server_location ( HttpRequest &request, std::string &response);
+
 #endif

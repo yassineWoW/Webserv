@@ -53,8 +53,8 @@ std::string to_string(T value) {
     return oss.str();
 }
 
-ParseResult isFileAndAccessible(const std::string &path, int accessFlag);
-ParseResult isDirectoryAndAccessible(const std::string &path);
-bool ends_with(const std::string &str, const std::string &suffix);
-std::string create_res(ParseResult code, std::string body, std::string path);
+ParseResult     isFileAndAccessible(const std::string &path, int accessFlag);
+ParseResult     isDirectoryAndAccessible(const std::string &path);
+bool            ends_with(const std::string &str, const std::string &suffix);
+std::string     create_res(ParseResult code, std::string body, std::string path);
 #endif
