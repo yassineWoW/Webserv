@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 21:46:09 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/14 19:43:54 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/23 11:55:09 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -122,28 +122,26 @@ void Multiplexer::modifyEpollEvents(int fd, uint32_t events)
 
 void Multiplexer::handleClientRead(int client_fd) 
 {
-    ClientState &state = client_states[client_fd];
-	state.last_activity = time(NULL);
-	HttpResponse response;
-	char buf[4096];
-    while (true)
-	{
-        ssize_t n = recv(client_fd, buf, sizeof(buf), 0);
-        if (n == 0) {
-            close(client_fd);
-            client_states.erase(client_fd);
-            return;
-        }
-        if (n < 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                break; // No more data for now
-            perror("recv error");
-            close(client_fd);
-            client_states.erase(client_fd);
-            return;
-        }
-        state.buffer.append(buf, n);
+	ClientState &state = client_states[client_fd];
+    state.last_activity = time(NULL);
+    HttpResponse response;
+    char buf[4096];
+
+    ssize_t n = recv(client_fd, buf, sizeof(buf), 0);
+    if (n == 0) {
+        close(client_fd);
+        client_states.erase(client_fd);
+        return;
     }
+    if (n < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+            return; // No more data for now
+        perror("recv error");
+        close(client_fd);
+        client_states.erase(client_fd);
+        return;
+    }
+    state.buffer.append(buf, n);
     try 
     {
         state.request.parse(state.buffer);
