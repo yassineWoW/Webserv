@@ -67,7 +67,7 @@ ParseResult HttpRequest::check_valid_path()
             return ( generateAutoindexHtml() );
         }  
 
-        return ( Forbidden );
+        return ( NotFound );
     }
 
     else if (result == NotFound)
