@@ -65,6 +65,7 @@ class HttpRequest
         ParseResult &                getStatusCode( ) ;
         std::string &                getMethod( );
         std::string &                getUri( );
+        std::string &                getQuery( );
         bool &                       getAutoIndex( );
         std::vector<std::string> &   getAutoIndexFiles( );
 
