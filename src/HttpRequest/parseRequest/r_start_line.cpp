@@ -36,8 +36,8 @@ ParseResult validate_path(std::string &path)
     if ( path.empty() || path[0] != '/' )
         throw (BadRequest);
 
-    if ( path[len] != '/' )
-        path += "/";
+    // if ( path[len] != '/' )
+    //     path += "/";
 
     for (size_t i = 0; i < len; i++)
     {

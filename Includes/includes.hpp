@@ -26,6 +26,7 @@
 enum ParseResult {
     OK = 200,                         // 0 - Success
     Incomplete,                 // 1 - Waiting for more data (not an error)
+    Redirect = 301,
     // Common 4xx client-side errors
     BadRequest = 400,                 // 2 - 400
     NotAllowed = 405,                 // 3 - 405

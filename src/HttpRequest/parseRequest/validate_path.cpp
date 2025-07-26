@@ -1,5 +1,17 @@
 #include "HttpRequest.hpp"
 
+ParseResult isDirectory(const std::string &path)
+{
+    struct stat sb;
+    if (stat(path.c_str(), &sb) != 0)
+        return ( NotFound ) ;  // does not exist or error
+    
+    if (!S_ISDIR(sb.st_mode))
+        return ( NotFound ) ;  // not a directory
+    
+    return ( OK );
+}
+
 ParseResult isDirectoryAndAccessible(const std::string &path)
 {
     struct stat sb;
@@ -49,41 +61,29 @@ ParseResult HttpRequest::generateAutoindexHtml ( ){
 
 ParseResult HttpRequest::check_valid_path()
 {
-    ParseResult result = isDirectoryAndAccessible( this->path );
-    if ( result == OK )
+    if (!r_url.empty() && r_url[r_url.length() - 1] != '/' && isDirectory(path) == OK)
+    {
+        return Redirect; 
+    }
+
+    ParseResult result = isDirectoryAndAccessible(path);
+
+    if (result == OK)
     {
         LocationConfig location = this->location;
-        path = path + location.index;
-        if ( isFileAndAccessible( path, R_OK ) == OK) {
-            return ( OK );
-        }
+        this->path += location.index;
 
-        else if (isFileAndAccessible( path, R_OK ) == Forbidden)
-            return (Forbidden);
-    
-        else if ( location.autoindex == true && location.index.empty() )
+        if (isFileAndAccessible(path, R_OK) == OK)
+            return OK;
+
+        else if (isFileAndAccessible(path, R_OK) == Forbidden)
+            return Forbidden;
+
+        else if (location.autoindex == true && location.index.empty())
         {
-            std::cout << path <<std::endl;
-            return ( generateAutoindexHtml() );
-        }  
-
-        return ( Forbidden );
-    }
-
-    else if (result == NotFound)
-    {
-        size_t len = this->path.length();
-        if (len > 0 && this->path[len - 1] == '/')
-            this->path.erase(len - 1, 1);
-        result = isFileAndAccessible( this->path, R_OK ) ;
-        if ( result == OK)
-        {
-            return ( OK );
+            return generateAutoindexHtml();
         }
-        else {
-            return ( result ) ;
-        }
+        return NotFound;
     }
-    
-    return ( Forbidden ) ; 
+    return ( result );
 }

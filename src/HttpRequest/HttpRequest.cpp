@@ -107,6 +107,7 @@ bool &                       HttpRequest::getHasTransferEncoding( ) { return ( r
 ParseResult &                HttpRequest::getStatusCode( ) { return (  r_status_code); };
 std::string &                HttpRequest::getUri( ) { return ( r_url ); };
 std::string &                HttpRequest::getMethod( ) { return ( r_method ); };
+std::string &                HttpRequest::getQuery( ) { return ( r_query ); };
 bool &                       HttpRequest::getAutoIndex( ) { return ( r_auto_index ); };
 std::vector<std::string> &   HttpRequest::getAutoIndexFiles( ) { return ( r_auto_index_files ); };
 HttpRequest::~HttpRequest () { }
