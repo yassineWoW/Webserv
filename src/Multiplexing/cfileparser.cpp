@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/02 18:13:25 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/21 08:56:41 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/21 09:02:03 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -370,7 +370,7 @@ std::vector<ServerConfig> ConfigParser::parse(const std::vector<std::string> tok
 				        throw std::runtime_error("Invalid buffer size in large_client_header_buffer_size: " + size_str);
 				    if (suffix == "k" || suffix == "K")
 				        size *= 1024;
-				    else if (suffix == "m" || suffix == "M")
+				    else if (suffix == "m" || suffix == "M") // m or M 7it nginx dayerhom convention l client_header_buffer maso9ich
 				        size *= 1024 * 1024;
 				    else if (!suffix.empty())
 				        throw std::runtime_error("Unknown size suffix in large_client_header_buffer_size: " + suffix);
