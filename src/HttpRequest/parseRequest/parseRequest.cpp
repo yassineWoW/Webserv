@@ -48,7 +48,6 @@ ParseResult HttpRequest::parse( std::string buffer )
         {
             r_body = r_buffer;
             r_current_body_size += r_buffer.length();
-
         }
         else
         {
@@ -58,7 +57,7 @@ ParseResult HttpRequest::parse( std::string buffer )
         result = parse_body();
         
         if (result != OK )
-        throw ( result );
+            throw ( result );
     }
     
     if ( r_read_status == END )
