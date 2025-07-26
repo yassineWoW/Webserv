@@ -30,28 +30,35 @@ void handle_auto_index_response(HttpRequest& request, std::string &body)
     body += "</ul></body></html>";
 }
 
-void    handle_redirection(HttpRequest& request, std::string &response)
+std::string    handle_redirection(HttpRequest& request, std::string CODE, std::string URL)
 {
-    const std::string CODE = request.getLocation().redirection_code;
-    const std::string URL = request.getLocation().redirection_url;
+    std::string response = "";
 
     response = "HTTP/1.1 " + CODE + " Moved\r\n";
     response += "Content-Type: " + getResponseType( request.getPath() ) + "\r\n";
     response += "Location: " + URL + "\r\n";
     response += "Connection: close\r\n";
     response += "\r\n";
+    return ( response );
 }
 
 void    HttpResponse::handle_get(HttpRequest& request, std::string &response)
 {
     if ( !request.getLocation().redirection_code.empty() )
     {
-        handle_redirection( request, response ) ;
+        const std::string CODE = request.getLocation().redirection_code;
+        const std::string URL = request.getLocation().redirection_url;
+        handle_redirection( request, CODE, URL ) ;
         return ;
     }
     ParseResult Pathresult = request.check_valid_path( );
     if ( Pathresult != OK)
-    {   
+    {
+        if ( Pathresult == Redirect )
+        {
+            response = handle_redirection( request, "301", request.getUri() + '/' + request.getQuery() ) ;
+            return ;
+        }
         Errors errors;
         response = errors.handle_error( request.getServer().error_pages, Pathresult ) ;
         return ;
