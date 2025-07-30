@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/02 18:13:39 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/20 19:55:35 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/30 12:17:25 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,7 @@ class ConfigParser
 		static void parse_name(ServerConfig &server, size_t i, std::vector<std::string> tokens);
 		static void parse_error_code(ServerConfig &server, size_t i, std::vector<std::string> tokens);
 		static void parse_max_body_size(ServerConfig &server, size_t i, std::vector<std::string> tokens);
+		//~ConfigParser();
 	};
 	
 size_t parse_location(const std::vector<std::string> &tokens, size_t i, LocationConfig &location);

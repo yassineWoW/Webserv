@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 21:46:09 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/23 11:55:09 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/30 13:06:40 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,11 +18,34 @@ Multiplexer* Multiplexer::instance = NULL;
 Multiplexer::Multiplexer()
 {}
 
+void Multiplexer::desroyInstance()
+{
+	if (instance)
+	{
+		delete instance;
+		instance  = NULL;
+	}
+}
+
 Multiplexer* Multiplexer::getInstance() {
 	if (instance == NULL) {
 		instance = new Multiplexer();
     }
     return instance;
+}
+
+Multiplexer::~Multiplexer()
+{
+    // Close all listening sockets
+    for (size_t i = 0; i < listen_fds.size(); ++i)
+        close(listen_fds[i]);
+    // Close all client sockets
+    for (std::map<int, ClientState>::iterator it = client_states.begin(); it != client_states.end(); ++it)
+        close(it->first);
+    client_states.clear();
+    // Close epoll fd
+    if (epoll_fd >= 0)
+        close(epoll_fd);
 }
 
 int Multiplexer::SetupServerSocket(int port)
@@ -41,7 +64,10 @@ int Multiplexer::SetupServerSocket(int port)
 	int opt = 1;
 	// std::cout << listen_fd << "\n\n";
 	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+	{
+		close(listen_fd);
 		throw std::runtime_error("setsockopt failure");
+	}
 	sockaddr_in addr;
 
 	std::memset(&addr, 0, sizeof(addr));
@@ -51,10 +77,14 @@ int Multiplexer::SetupServerSocket(int port)
 	
 	if (bind(listen_fd, (sockaddr*)&addr, sizeof(addr)) < 0)
 	{
+		close(listen_fd);
 		throw std::runtime_error("bind failure");
 	}
 	if (listen(listen_fd, 10) < 0)
+	{
+		close(listen_fd);
 		throw std::runtime_error("Listen failure");
+	}
 	std::cout << "server up on: localhost:" << port << std::endl;
 	return listen_fd;
 }
@@ -278,9 +308,6 @@ void Multiplexer::run()
             perror("epoll_create1");
         throw std::runtime_error("Failed to create epoll instance");
     }
-
-    std::vector<int> listen_fds;
-    std::set<int> listen_fd_set;
     for (size_t i = 0; i < server_ports.size(); ++i)
     {
         int fd = SetupServerSocket(server_ports[i]);

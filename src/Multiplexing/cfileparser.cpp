@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/02 18:13:25 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/21 09:02:03 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/07/30 12:17:19 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,13 +15,18 @@
 
 ConfigParser *ConfigParser::instance = NULL;
 
+//ConfigParser::~ConfigParser()
+//{
+//	delete this;
+//}
+
 ConfigParser::ConfigParser(const std::string &filename)
 {
 	std::ifstream file(filename.c_str());
 	if (!file) {
-    std::cerr << "Could not open config file: " << filename << std::endl;
-    	return;
-		}
+        std::cerr << "Could not open config file: " << filename << std::endl;
+        throw std::runtime_error("Config file not found: " + filename);
+    }
 	std::stringstream buffer;
 	buffer << file.rdbuf();
 	
