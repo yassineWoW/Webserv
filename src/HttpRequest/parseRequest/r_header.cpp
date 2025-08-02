@@ -9,6 +9,54 @@
     Returns true if the delimiter exists in 'request'; otherwise, returns false.
 */
 
+std::string trim(const std::string& str) {
+    std::size_t start = str.find_first_not_of(" \t\n\r");
+    std::size_t end = str.find_last_not_of(" \t\n\r");
+    return (start == std::string::npos) ? "" : str.substr(start, end - start + 1);
+}
+
+void        HttpRequest::handle_cookies( )
+{
+
+    std::vector<S_Header>::const_iterator it;
+    for (it = r_header.begin(); it != r_header.end(); it++)
+    {
+        if (it->key == "cookie")
+        {
+            break;
+        }
+        (void) it;
+    }
+    if ( it != r_header.end() )
+    {
+        std::string cookies = it->value;
+        while ( !cookies.empty() )
+        {
+            trim( cookies );
+            std::size_t index = cookies.find("=");
+            std::size_t sep = cookies.find(";");
+            if ( index == std::string::npos )
+                break;
+            sep = ( sep != std::string::npos ? sep : cookies.length() );
+            std::string key = trim( cookies.substr( 0, index ) );
+            std::string value = trim( cookies.substr( index + 1, sep - index - 1 ) );
+            if (!key.empty() && !value.empty())
+                r_cookies[key] = value;
+            cookies.erase(0, sep + 1);
+        }
+    }
+    // std::map<std::string, std::string>::iterator begin = r_cookies.begin();
+    // std::map<std::string, std::string>::iterator end = r_cookies.end();
+    // std::cout << "------------------------------------" <<std::endl;
+    // while (begin != end)
+    // {
+    //     std::cout << begin->first << "=" << begin->second << std::endl;
+    //     begin ++;
+    // }
+    // std::cout << "------------------------------------" <<std::endl;
+}
+
+
 bool HttpRequest::validate_required_headers( )
 {
     std::string required_headers[] = { "host", "user-agent", "accept", (r_method == "POST"? "content-type" : "END"), "END" };
@@ -100,5 +148,7 @@ ParseResult HttpRequest::parse_header(std::string &header)
     }
     if (!validate_required_headers( ))
         throw (BadRequest);
+    // std::cout << "---------------------------------" <<std::endl;
+    handle_cookies();
     return (OK);
 }
