@@ -25,7 +25,6 @@ void        HttpRequest::handle_cookies( )
         {
             break;
         }
-        (void) it;
     }
     if ( it != r_header.end() )
     {
