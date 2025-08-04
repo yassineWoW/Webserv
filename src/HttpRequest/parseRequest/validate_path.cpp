@@ -85,5 +85,7 @@ ParseResult HttpRequest::check_valid_path()
         }
         return NotFound;
     }
+    else
+        result = isFileAndAccessible(path, R_OK);
     return ( result );
 }
