@@ -11,7 +11,7 @@
 
 bool HttpRequest::validate_required_headers( )
 {
-    std::string required_headers[] = { "host", "user-agent", "accept", (r_method == "POST"? "content-type" : "END"), "END" };
+    std::string required_headers[] = { "host", (r_method == "POST"? "content-type" : "END"), "END" };
     bool connectionFlag = false;
 
     for (int i = 0; i < 5; i++)
