@@ -80,6 +80,16 @@ void    HttpResponse::handle_get(HttpRequest& request, std::string &response)
     size_t len = body.size();
     response += "Content-Length: " + to_string(len) + "\r\n";
     response += "Connection: close\r\n";
+    if ( request.getCookies().size() > 0 )
+    {
+        std::map<std::string, std::string>::iterator begin = request.getCookies().begin();
+        std::map<std::string, std::string>::iterator end = request.getCookies().end();
+        while (begin != end)
+        {
+            response += "Set-Cookie: " + begin->first + "=" + begin->second + "; Secure; HttpOnly;\r\n";
+            begin++;
+        }
+    }
     response += "\r\n";
     response += body; 
 }
