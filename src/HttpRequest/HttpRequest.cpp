@@ -110,4 +110,6 @@ std::string &                HttpRequest::getMethod( ) { return ( r_method ); };
 std::string &                HttpRequest::getQuery( ) { return ( r_query ); };
 bool &                       HttpRequest::getAutoIndex( ) { return ( r_auto_index ); };
 std::vector<std::string> &   HttpRequest::getAutoIndexFiles( ) { return ( r_auto_index_files ); };
+std::map<std::string, std::string> &   HttpRequest::getCookies( ) { return ( r_cookies ); };
+
 HttpRequest::~HttpRequest () { }
