@@ -66,12 +66,14 @@ ParseResult HttpRequest::parse_start_line(std::string &start_line)
     }
 
     version = start_line;
-  
-    if (version != "HTTP/1.1")
+    if (version.find(" ") != std::string::npos)
         throw (BadRequest);
+    
+    if (version != "HTTP/1.0")
+        throw (HTTPVersionNotSupported);
 
     if (method != "GET" && method != "POST" && method != "DELETE")
-        throw (NotAllowed);
+        throw (NotImplemented);
 
     r_method = method; r_url = url; r_version = version;
 
