@@ -55,11 +55,11 @@ ParseResult HttpRequest::setLocation()
             int len = (location.path[location.path.length() - 1] == '/' ? location.path.length() - 1 : location.path.length());
             if (r_url[ len ] != '/')
             {
-                throw ( NotFound );
+                this->location = locations[0];
+                bestPrefix = location.path.length();
             }
         }
     }
-
     std::vector<std::string> allowed_methods = location.allowed_methods;
     if ( allowed_methods.empty() )
         return ( OK );
