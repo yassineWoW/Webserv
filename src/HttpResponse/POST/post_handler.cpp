@@ -1,6 +1,7 @@
 // #include "HttpRequest.hpp"
 #include "cfileparser.hpp"
 #include "HttpResponse.hpp"
+#include "multiplexer.hpp"
 
 #include <cerrno>
 #include <cstring>
@@ -14,11 +15,13 @@
 #include <vector>
 #include <string>
 
+#include <fcntl.h>
+
 static std::map<ParseResult, std::pair<int, std::string> > create_status_map() 
 {
     std::map<ParseResult, std::pair<int, std::string> > m;
     m[OK]                     = std::make_pair(200, "OK");
-    m[Incomplete]             = std::make_pair(100, "Continue"); // optional
+    m[Incomplete]             = std::make_pair(100, "Continue");
     m[BadRequest]             = std::make_pair(400, "Bad Request");
     m[NotAllowed]             = std::make_pair(405, "Method Not Allowed");
     m[LengthRequired]         = std::make_pair(411, "Length Required");
@@ -39,17 +42,62 @@ static std::map<ParseResult, std::pair<int, std::string> > create_status_map()
 static std::string mime_to_extension(const std::string& mime) {
     if (mime == "text/plain") return ".txt";
     if (mime == "text/html") return ".html";
+    if (mime == "text/css") return ".css";
+    if (mime == "text/xml") return ".xml";
+    if (mime == "text/javascript" || mime == "application/javascript") return ".js";
     if (mime == "application/json") return ".json";
     if (mime == "application/xml") return ".xml";
+    if (mime == "application/pdf") return ".pdf";
+    if (mime == "application/rtf") return ".rtf";
+    if (mime == "application/zip") return ".zip";
+    if (mime == "application/x-rar-compressed") return ".rar";
+    if (mime == "application/x-7z-compressed") return ".7z";
+    if (mime == "application/x-tar") return ".tar";
+    if (mime == "application/x-bzip2") return ".bz2";
+    if (mime == "application/x-gzip") return ".gz";
+    if (mime == "application/x-xz") return ".xz";
+    if (mime == "application/msword") return ".doc";
+    if (mime == "application/vnd.ms-excel") return ".xls";
+    if (mime == "application/vnd.ms-powerpoint") return ".ppt";
+    if (mime == "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return ".docx";
+    if (mime == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") return ".xlsx";
+    if (mime == "application/vnd.openxmlformats-officedocument.presentationml.presentation") return ".pptx";
+    if (mime == "application/java-archive") return ".jar";
+    if (mime == "application/x-msdownload") return ".exe";
+    if (mime == "application/octet-stream") return ".bin";
     if (mime == "image/png") return ".png";
     if (mime == "image/jpeg") return ".jpeg";
     if (mime == "image/jpg") return ".jpg";
     if (mime == "image/gif") return ".gif";
-    if (mime == "application/pdf") return ".pdf";
+    if (mime == "image/webp") return ".webp";
+    if (mime == "image/x-icon") return ".ico";
+    if (mime == "image/bmp") return ".bmp";
+    if (mime == "image/svg+xml") return ".svg";
+    if (mime == "audio/mpeg") return ".mp3";
+    if (mime == "audio/ogg") return ".ogg";
+    if (mime == "audio/wav") return ".wav";
+    if (mime == "audio/x-m4a") return ".m4a";
+    if (mime == "video/mp4") return ".mp4";
+    if (mime == "video/webm") return ".webm";
+    if (mime == "video/x-msvideo") return ".avi";
+    if (mime == "video/quicktime") return ".mov";
+    if (mime == "video/x-flv") return ".flv";
+    if (mime == "application/x-shockwave-flash") return ".swf";
+    if (mime == "application/x-font-woff") return ".woff";
+    if (mime == "application/font-woff2") return ".woff2";
+    if (mime == "application/x-font-ttf" || mime == "font/ttf") return ".ttf";
+    if (mime == "font/otf") return ".otf";
+    if (mime == "application/x-x509-ca-cert") return ".crt";
+    if (mime == "application/vnd.google-earth.kml+xml") return ".kml";
+    if (mime == "application/vnd.google-earth.kmz") return ".kmz";
+    
+    // fallback: extract extension from MIME type
+    // Uncomment if you want to return .<subtype> for unknown types
     // size_t slash_pos = mime.find('/');
     // if (slash_pos != std::string::npos && slash_pos + 1 < mime.size()) {
     //     return "." + mime.substr(slash_pos + 1);
     // }
+
     return ".bin";
 }
 
@@ -150,6 +198,42 @@ static ParseResult handle_multipart(const std::string& body, const std::string& 
     return found_part ? OK : BadRequest;
 }
 
+// static std::string execute_cgi_script(const std::string& script_path, const std::string& interpreter) {
+//     int pipefd[2];
+//     if (pipe(pipefd) == -1)
+//         return "CGI pipe error\n";
+
+//     pid_t pid = fork();
+//     if (pid < 0) {
+//         close(pipefd[0]);
+//         close(pipefd[1]);
+//         return "CGI fork error\n";
+//     }
+
+//     if (pid == 0) {
+//         // Child process
+//         dup2(pipefd[1], STDOUT_FILENO);
+//         dup2(pipefd[1], STDERR_FILENO);
+//         close(pipefd[0]);
+//         close(pipefd[1]);
+//         execlp(interpreter.c_str(), interpreter.c_str(), script_path.c_str(), NULL);
+//         _exit(1);
+//     }
+
+//     // Parent process
+//     close(pipefd[1]);
+//     std::string output;
+//     char buffer[4096];
+//     ssize_t n;
+//     while ((n = read(pipefd[0], buffer, sizeof(buffer))) > 0) {
+//         output.append(buffer, n);
+//     }
+//     close(pipefd[0]);
+//     waitpid(pid, NULL, 0);
+//     printf("CGI script executed: %s\n", output.c_str());
+//     return output;
+// }
+
 std::string HttpResponse::create_response(ParseResult code, const std::string& body)
 {
     static std::map<ParseResult, std::pair<int, std::string> > status_map = create_status_map();
@@ -179,10 +263,10 @@ std::string HttpResponse::handle_post(HttpRequest& request, std::vector<std::str
     const std::string& body = request.getBody();
     const std::string& content_type = request.getContentType();
     const std::string& upload_path = request.getLocation().upload_path;
-    std::cout << "-----------------------------------------" << std::endl;
-    std::cout << request.getLocation().upload_path << std::endl;
-    std::cout << "Upload path: " << upload_path << std::endl;
-    std::cout << "-----------------------------------------" << std::endl;
+    // std::cout << "-----------------------------------------" << std::endl;
+    // std::cout << request.getLocation().upload_path << std::endl;
+    // std::cout << "Upload path: " << upload_path << std::endl;
+    // std::cout << "-----------------------------------------" << std::endl;
 
     if (body.empty())
         return HttpResponse::create_response(BadRequest, "POST body is empty.");
@@ -272,3 +356,4 @@ std::string HttpResponse::handle_post(HttpRequest& request, std::vector<std::str
 
 //     std::cout << "Body: " << r_body << std::endl;
 // }
+

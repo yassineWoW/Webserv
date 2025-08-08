@@ -11,6 +11,8 @@
 /* ************************************************************************** */
 
 #include "multiplexer.hpp"
+#include "Cgi.hpp"
+
 extern volatile sig_atomic_t stop_server;
 
 Multiplexer* Multiplexer::instance = NULL;
@@ -178,17 +180,29 @@ void Multiplexer::handleClientRead(int client_fd)
         if (state.request.getReadStatus() == END) 
         {
             ParseResult server_result = match_server_location( state.request,  state.response_buffer);
+            std::string url = state.request.getUri();
+            int f_cgi = 0;
+            if ( (url.size() >= 4 && url.substr(url.size() - 4) == ".php") || (url.size() >= 3 && url.substr(url.size() - 3) == ".py"))
+                f_cgi = 1;
             if ( server_result != OK)
                 throw ( server_result );
-
             if ( state.request.getMethod() == "POST" )
             {
+                if (f_cgi)
+                    CGI_handler cgi;
                 std::vector<std::string> stored_bodies;
                 state.response_buffer = response.handle_post( state.request, stored_bodies);
             }
             else if ( state.request.getMethod() == "GET" )
             {
-                response.handle_get(state.request, state.response_buffer);
+                std::string url = state.request.getUri();
+                if (f_cgi)
+                {
+                    CGI_handler cgi;
+                    state.response_buffer = cgi.handle_cgi( state.request ); 
+                }
+                else
+                    response.handle_get(state.request, state.response_buffer);
             }
             else if ( state.request.getMethod() == "DELETE" )
             {
@@ -390,101 +404,4 @@ void Multiplexer::run()
         close(epoll_fd);
 }
 
-//void 	Multiplexer::run()
-//{
-//	epoll_fd = epoll_create1(EPOLL_CLOEXEC);
-//	if (epoll_fd < 0)
-//	{
-//		if (errno == EMFILE || errno == ENFILE)
-//		{
-//			std::cerr << "Fatal: File descriptor limit reached (errno " << errno << ")." << std::endl;
-//		}
-//		else
-//		perror("epoll_create1");
-//		throw std::runtime_error("Failed to create epoll instance");
-//	}
-	
-//	// 2. Set up listening sockets (assuming you have a vector of ports)
-//	std::vector<int> listen_fds;
-//	std::set<int> listen_fd_set; // For quick lookup in is_listening_socket
-//	for (size_t i = 0; i < server_ports.size(); ++i)
-//	{
-//		int fd = SetupServerSocket(server_ports[i]);
-//		listen_fds.push_back(fd);
-//		listen_fd_set.insert(fd);
-		
-//		struct epoll_event ev;
-//		ev.events = EPOLLIN;
-//		ev.data.fd = fd;
-//		if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) < 0) {
-//			perror("epoll_ctl: listen_fd");
-//			close(fd);
-//			throw std::runtime_error("Failed to add listen_fd to epoll");
-//		}
-//	}
-	
-//	// main event loop :
-//	const int MAX_EVENTS = 1024;
-//	struct epoll_event events[MAX_EVENTS];
-	
-//	while (!stop_server)
-//	{
-//			int n = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
-//			if (n < 0)
-//			{
-
-//				if (errno == EINTR){ // signals ?
-//					continue ;
-//				}
-//				perror("epoll_wait");
-//				break ;
-//			}
-//			for (int i = 0; i < n; ++i)
-//			{
-//				int fd = events[i].data.fd;
-//				uint32_t ev = events[i].events;
-//				if (listen_fd_set.count(fd))
-//				{
-//					handleNewConnection(fd);
-//				}
-//				else
-//				{
-//					if (ev & EPOLLIN) {
-//					   handleClientRead(fd); // Read request
-//					}
-//					if (ev & EPOLLOUT) {
-//						handleClientWrite(fd); // Write response
-//					}
-//					if (ev & (EPOLLERR | EPOLLHUP))
-//					{
-//						perror("epoll error or hangup");
-//						epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL); // Remove from epoll
-//						close(fd);                                    // Close the socket
-//						client_states.erase(fd);                      // Remove client state
-//						continue ;
-//						// Handle errors or closed connection
-//					}
-//				}
-//			}
-//	//		time_t now = time(NULL);
-//    //for (std::map<int, ClientState>::iterator it = client_states.begin(); it != client_states.end(); )
-//    //{
-//    //    if (now - it->second.last_activity > CLIENT_TIMEOUT)
-//    //    {
-//    //        close(it->first);
-//    //        client_states.erase(it++);
-//    //    }
-//    //    else
-//    //    {
-//    //        ++it;
-//    //    }
-//    //}
-//	}
-//	for (size_t i = 0; i < listen_fds.size(); ++i)
-//    	close(listen_fds[i]);
-//	for (std::map<int, ClientState>::iterator it = client_states.begin(); it != client_states.end(); ++it)
-//    	close(it->first);
-//	client_states.clear();
-//	if (epoll_fd >= 0)
-//    	close(epoll_fd);
-//}
+// No changes needed: epoll event loop already supports multiple clients.
