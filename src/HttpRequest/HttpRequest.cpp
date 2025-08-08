@@ -32,6 +32,11 @@ ParseResult HttpRequest::setServer()
 }
 
 LocationConfig& HttpRequest::getLocation() { return ( this->location ); }
+unsigned int HttpRequest::getContentLength() const { return r_content_length; }
+const std::vector<S_Header>& HttpRequest::getHeaders() const {
+    return r_header;
+}
+
 
 ParseResult HttpRequest::setLocation() 
 {
@@ -55,11 +60,11 @@ ParseResult HttpRequest::setLocation()
             int len = (location.path[location.path.length() - 1] == '/' ? location.path.length() - 1 : location.path.length());
             if (r_url[ len ] != '/')
             {
-                throw ( NotFound );
+                this->location = locations[0];
+                bestPrefix = location.path.length();
             }
         }
     }
-
     std::vector<std::string> allowed_methods = location.allowed_methods;
     if ( allowed_methods.empty() )
         return ( OK );
@@ -110,4 +115,6 @@ std::string &                HttpRequest::getMethod( ) { return ( r_method ); };
 std::string &                HttpRequest::getQuery( ) { return ( r_query ); };
 bool &                       HttpRequest::getAutoIndex( ) { return ( r_auto_index ); };
 std::vector<std::string> &   HttpRequest::getAutoIndexFiles( ) { return ( r_auto_index_files ); };
+std::map<std::string, std::string> &   HttpRequest::getCookies( ) { return ( r_cookies ); };
+
 HttpRequest::~HttpRequest () { }

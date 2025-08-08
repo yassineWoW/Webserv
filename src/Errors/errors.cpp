@@ -30,6 +30,7 @@ std::map<ParseResult, std::pair<int, std::string> > create_errors_map()
     m[RequestTimeout]         = std::make_pair(408, "Request Timeout");
     m[HTTPVersionNotSupported]= std::make_pair(505, "HTTP Version Not Supported");
     m[InternalError]          = std::make_pair(500, "Internal Server Error");
+    m[NotImplemented]         = std::make_pair(501, "Method Not Implemented");
     return m;
 }
 

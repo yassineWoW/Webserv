@@ -48,28 +48,32 @@ class HttpRequest
         ~HttpRequest( );
 
         // Getters & Setters
+
+        unsigned int getContentLength() const;
+        const std::vector<S_Header>& getHeaders() const;
     
-        ParseResult                  setServer( );
-        ParseResult                  setLocation( );
-        ServerConfig&                getServer( ) ;
-        LocationConfig&              getLocation( ) ;
-        void                         setPath( std::string &root, std::string &url ) ;
-        std::string &                getPath( ) ;
-        E_STATUS &                   getReadStatus( ) ;
-        void                         setReadStatus( E_STATUS status ) ;
-        size_t &                     getCurrentBodySize( ) ;
-        void                         setCurrentBodySize( size_t size ) ;
-        std::string &                getBody( ) ;
-        bool &                       getKeepAlive( ) ;
-        std::string &                getContentType( ) ;
-        bool &                       getHasContentLength( ) ;
-        bool &                       getHasTransferEncoding( ) ;
-        ParseResult &                getStatusCode( ) ;
-        std::string &                getMethod( );
-        std::string &                getUri( );
-        std::string &                getQuery( );
-        bool &                       getAutoIndex( );
-        std::vector<std::string> &   getAutoIndexFiles( );
+        ParseResult                            setServer( );
+        ParseResult                            setLocation( );
+        ServerConfig&                          getServer( ) ;
+        LocationConfig&                        getLocation( ) ;
+        void                                   setPath( std::string &root, std::string &url ) ;
+        std::string &                          getPath( ) ;
+        E_STATUS &                             getReadStatus( ) ;
+        void                                   setReadStatus( E_STATUS status ) ;
+        size_t &                               getCurrentBodySize( ) ;
+        void                                   setCurrentBodySize( size_t size ) ;
+        std::string &                          getBody( ) ;
+        bool &                                 getKeepAlive( ) ;
+        std::string &                          getContentType( ) ;
+        bool &                                 getHasContentLength( ) ;
+        bool &                                 getHasTransferEncoding( ) ;
+        ParseResult &                          getStatusCode( ) ;
+        std::string &                          getMethod( );
+        std::string &                          getUri( );
+        std::string &                          getQuery( );
+        bool &                                 getAutoIndex( );
+        std::vector<std::string> &             getAutoIndexFiles( );
+        std::map<std::string, std::string> &   getCookies( );
 
         
 
