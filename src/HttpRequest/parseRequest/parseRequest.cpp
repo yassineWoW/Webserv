@@ -20,15 +20,9 @@ ParseResult HttpRequest::parse( std::string buffer )
     {
         if ( !find_and_get(r_buffer, header, "\r\n\r\n") )
             throw ( Incomplete );  
-        try
-        {
-            result = parse_header(header);
-        }
-        catch(const ParseResult& e)
-        {
-            throw e;
-        }
-        
+
+        result = parse_header(header);
+
         if ( result != OK )
             throw ( result );
         
