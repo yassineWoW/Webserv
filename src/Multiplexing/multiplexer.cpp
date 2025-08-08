@@ -11,7 +11,6 @@
 /* ************************************************************************** */
 
 #include "multiplexer.hpp"
-#include "Cgi.hpp"
 
 extern volatile sig_atomic_t stop_server;
 
@@ -188,8 +187,6 @@ void Multiplexer::handleClientRead(int client_fd)
                 throw ( server_result );
             if ( state.request.getMethod() == "POST" )
             {
-                if (f_cgi)
-                    CGI_handler cgi;
                 std::vector<std::string> stored_bodies;
                 state.response_buffer = response.handle_post( state.request, stored_bodies);
             }
@@ -199,7 +196,7 @@ void Multiplexer::handleClientRead(int client_fd)
                 if (f_cgi)
                 {
                     CGI_handler cgi;
-                    state.response_buffer = cgi.handle_cgi( state.request ); 
+                    state.response_buffer = cgi.handle_cgi( state.request );
                 }
                 else
                     response.handle_get(state.request, state.response_buffer);

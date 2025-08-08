@@ -48,6 +48,9 @@ class HttpRequest
         ~HttpRequest( );
 
         // Getters & Setters
+
+        unsigned int getContentLength() const;
+        const std::vector<S_Header>& getHeaders() const;
     
         ParseResult                            setServer( );
         ParseResult                            setLocation( );

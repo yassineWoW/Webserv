@@ -15,7 +15,10 @@
 
 #include "includes.hpp"
 #include "HttpResponse.hpp"
+#include "Cgi.hpp"
 
+
+class Cgi;
 class ClientState
 {
 	public:

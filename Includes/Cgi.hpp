@@ -8,11 +8,10 @@
 
 class CGI_handler {
     private :
-        std::string& script_path;
-        std::string& interpreter;
+        std::string script_path;
+        std::string interpreter;
     public:
-        CGI_handler();
-        std::string execute_cgi_script(const std::string& script_path, const std::string& interpreter);
+        std::string execute_cgi_script(const std::string& script_path, const std::string& interpreter, HttpRequest& request);
         std::string handle_cgi(HttpRequest& request);
 };
 

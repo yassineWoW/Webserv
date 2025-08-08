@@ -22,7 +22,7 @@
 #include <signal.h>
 #include <ctime>
 #include <algorithm>
-
+#include <sys/wait.h>
 
 enum ParseResult {
     OK = 200,                         // 0 - Success
