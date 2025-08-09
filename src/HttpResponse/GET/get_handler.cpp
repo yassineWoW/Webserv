@@ -42,6 +42,24 @@ std::string    handle_redirection(HttpRequest& request, std::string CODE, std::s
     return ( response );
 }
 
+std::string setSessionId()
+{
+    static bool seeded = false;
+    if (!seeded) {
+        std::srand(static_cast<unsigned int>(std::time(0)));
+        seeded = true;
+    }
+
+    std::ostringstream oss;
+
+    for (int i = 0; i < 16; ++i) {
+        int r = std::rand() % 256;
+        oss << std::hex << std::setw(2) << std::setfill('0') << r;
+    }
+
+    return oss.str();
+}
+
 void    HttpResponse::handle_get(HttpRequest& request, std::string &response)
 {
     if ( !request.getLocation().redirection_code.empty() )
@@ -80,15 +98,9 @@ void    HttpResponse::handle_get(HttpRequest& request, std::string &response)
     size_t len = body.size();
     response += "Content-Length: " + to_string(len) + "\r\n";
     response += "Connection: close\r\n";
-    if ( request.getCookies().size() > 0 )
+    if ( request.getCookies().find("sid") ==  request.getCookies().end())
     {
-        std::map<std::string, std::string>::iterator begin = request.getCookies().begin();
-        std::map<std::string, std::string>::iterator end = request.getCookies().end();
-        while (begin != end)
-        {
-            response += "Set-Cookie: " + begin->first + "=" + begin->second + "; Secure; HttpOnly;\r\n";
-            begin++;
-        }
+        response += "Set-Cookie: sid=" + setSessionId() + "; Secure; HttpOnly;\r\n";
     }
     response += "\r\n";
     response += body; 
