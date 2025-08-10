@@ -32,7 +32,7 @@ class ClientState
 		HttpRequest request;
 		time_t last_activity;
 		bool is_cgi_running;
-		time_t cgi_start_time;  // Track when CGI started
+		time_t cgi_start_time;
 };
 
 class Multiplexer

@@ -213,7 +213,38 @@ void Multiplexer::handleClientRead(int client_fd)
             if ( state.request.getMethod() == "POST" )
             {
                 std::vector<std::string> stored_bodies;
-                state.response_buffer = response.handle_post( state.request, stored_bodies);
+                if (f_cgi)
+                {
+                    CGI_handler cgi;
+                    std::string cgi_result = cgi.handle_cgi(state.request, true);
+                    if (cgi_result.substr(0, 12) == "CGI_STARTED:") {
+                        std::string remaining = cgi_result.substr(12);
+                        size_t colon1 = remaining.find(':');
+                        size_t colon2 = remaining.find(':', colon1 + 1);
+                        if (colon1 != std::string::npos && colon2 != std::string::npos) {
+                            int cgi_fd = atoi(remaining.substr(0, colon1).c_str());
+                            pid_t cgi_pid = atoi(remaining.substr(colon1 + 1, colon2 - colon1 - 1).c_str());
+                            int stdin_fd = atoi(remaining.substr(colon2 + 1).c_str());
+                            cgi_fd_to_pid[cgi_fd] = cgi_pid;
+                            registerCgiFd(cgi_fd, client_fd);
+                            const std::string& body = state.request.getBody();
+                            ssize_t written = 0;
+                            size_t total = 0;
+                            while (total < body.size()) {
+                                written = write(stdin_fd, body.data() + total, body.size() - total);
+                                if (written <= 0) break;
+                                total += written;
+                            }
+                            close(stdin_fd);
+                            return;
+                        }
+                    } else
+                        state.response_buffer = cgi_result;
+                }
+                else
+                {
+                    state.response_buffer = response.handle_post( state.request, stored_bodies);
+                }
             }
             else if ( state.request.getMethod() == "GET" )
             {
@@ -221,11 +252,9 @@ void Multiplexer::handleClientRead(int client_fd)
                 if (f_cgi)
                 {
                     CGI_handler cgi;
-                    std::string cgi_result = cgi.handle_cgi( state.request );
+                    std::string cgi_result = cgi.handle_cgi( state.request, false );
                     
-                    // Check if CGI was started successfully
                     if (cgi_result.substr(0, 12) == "CGI_STARTED:") {
-                        // Parse format: "CGI_STARTED:fd:pid"
                         std::string remaining = cgi_result.substr(12);
                         size_t colon_pos = remaining.find(':');
                         if (colon_pos != std::string::npos) {
@@ -233,12 +262,10 @@ void Multiplexer::handleClientRead(int client_fd)
                             pid_t cgi_pid = atoi(remaining.substr(colon_pos + 1).c_str());
                             cgi_fd_to_pid[cgi_fd] = cgi_pid;
                             registerCgiFd(cgi_fd, client_fd);
-                            return; // Don't modify epoll events yet - wait for CGI to finish
+                            return;
                         }
-                    } else {
-                        // CGI failed to start
+                    } else
                         state.response_buffer = cgi_result;
-                    }
                 }
                 else
                     response.handle_get(state.request, state.response_buffer);

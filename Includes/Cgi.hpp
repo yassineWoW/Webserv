@@ -11,8 +11,8 @@ class CGI_handler {
         std::string script_path;
         std::string interpreter;
     public:
-        std::pair<int, pid_t> execute_cgi_script(const std::string& script_path, const std::string& interpreter, HttpRequest& request);
-        std::string handle_cgi(HttpRequest& request);
+        std::pair<int, pid_t> execute_cgi_script(const std::string& script_path, const std::string& interpreter, HttpRequest& request, bool is_post, int &stdin_fd_out);
+        std::string handle_cgi(HttpRequest &request, bool is_post);
 };
 
 #endif

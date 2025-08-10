@@ -9,7 +9,8 @@ CPPFILES_S = $(addprefix src/HttpRequest/, HttpRequest.cpp matching.cpp) \
 	$(addprefix src/Errors/, errors.cpp) \
 	$(addprefix src/HttpRequest/parseRequest/, parseRequest.cpp r_body.cpp r_header.cpp r_start_line.cpp validate_path.cpp helpers.cpp server.cpp)
 
-CPPFILES_A = $(addprefix src/HttpResponse/POST/, post_handler.cpp cgi_handler.cpp)
+CPPFILES_A = $(addprefix src/HttpResponse/POST/, post_handler.cpp) \
+			 $(addprefix src/HttpResponse/CGI/, cgi_handler.cpp)
 
 CPPINCLUDES = $(addprefix Includes/, multiplexer.hpp cfileparser.hpp includes.hpp)
 
