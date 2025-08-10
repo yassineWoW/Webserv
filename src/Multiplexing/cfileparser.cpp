@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/02 18:13:25 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/30 12:17:19 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/08/10 16:19:44 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,7 +114,9 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
 			if (tokens.size() <= i + 2 || tokens[i + 2] != ";")
 				throw std::runtime_error("Syntax error: 'root' directive must end with a ';'");
 			location.root = tokens[i + 1];
-			if (location.root.empty() || location.root[0] != '/')
+			if (location.root.empty() || (location.root[0] != '/' && 
+     location.root.substr(0, 2) != "./" && 
+     location.root.substr(0, 3) != "../")) //|| location.root[0] != '/')
                 throw std::runtime_error("Invalid root path in location block: " + location.path);
 			i += 3;
 		}

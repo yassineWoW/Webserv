@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 21:46:09 by yimizare          #+#    #+#             */
-/*   Updated: 2025/08/08 11:34:54 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/08/10 16:50:54 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -193,19 +193,8 @@ void Multiplexer::handleClientRead(int client_fd)
         client_states.erase(client_fd);
         return;
     }
-    if (n < 0) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
-            return; // No more data for now
-        if (errno == EBADF) {
-            // Bad file descriptor - fd was already closed
-            std::cerr << "Warning: recv() called on closed fd " << client_fd << std::endl;
-            client_states.erase(client_fd);
-            return;
-        }
-        perror("recv error");
-        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-        close(client_fd);
-        client_states.erase(client_fd);
+    if (n < 0)
+	{
         return;
     }
     state.buffer.append(buf, n);
@@ -295,17 +284,8 @@ void Multiplexer::handleClientWrite(int client_fd)
     ssize_t n = send(client_fd, state.response_buffer.c_str(), state.response_buffer.size(), 0);
    if (n < 0)
    {
-    if (errno == EAGAIN || errno == EWOULDBLOCK)
-	{
-        // Socket not ready for writing, try again later
-        return;
-    }
-    	perror("send");
-        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-    	close(client_fd);
-    	client_states.erase(client_fd);
-    	return;
-	}
+		return ;
+   }
 
     // Remove sent data from the buffer
     state.response_buffer.erase(0, n);
@@ -330,6 +310,38 @@ void Multiplexer::handleClientWrite(int client_fd)
     }
 }
 
+const char* my_inet_ntop(int af, const void* src, char* dst, socklen_t size)
+{
+    if (af != AF_INET || !src || !dst || size < 16) {
+        return NULL; // Invalid parameters
+    }
+    
+    // Cast the source to unsigned char pointer to access individual bytes
+    const unsigned char* addr = (const unsigned char*)src;
+    
+    // Extract each byte of the IP address
+    // IPv4 addresses are stored in network byte order (big-endian)
+    unsigned char byte1 = addr[0];  // First octet
+    unsigned char byte2 = addr[1];  // Second octet
+    unsigned char byte3 = addr[2];  // Third octet
+    unsigned char byte4 = addr[3];  // Fourth octet
+    
+    // Convert each byte to string and format as "xxx.xxx.xxx.xxx"
+    int written = snprintf(dst, size, "%u.%u.%u.%u", 
+                          (unsigned int)byte1,
+                          (unsigned int)byte2, 
+                          (unsigned int)byte3,
+                          (unsigned int)byte4);
+    
+    // Check if the conversion was successful
+    if (written < 0 || written >= (int)size) {
+        return NULL; // Buffer too small or error
+    }
+    
+    return dst; // Return pointer to the result string
+}
+
+
 void	Multiplexer::handleNewConnection(int listen_fd)
 {
 	sockaddr_in client_addr;
@@ -345,8 +357,8 @@ void	Multiplexer::handleNewConnection(int listen_fd)
 		perror("accept");
 		throw std::runtime_error("Accept failure"); // or throw an exception
     }
-    char ip[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &(client_addr.sin_addr), ip, INET_ADDRSTRLEN);
+    char ip[16];
+	my_inet_ntop(AF_INET, &(client_addr.sin_addr), ip, sizeof(ip));
     int client_port = ntohs(client_addr.sin_port);
     std::cout << "\033[36mNEW CONNECTION FROM...  " << ip << ":" << client_port << "\033[0m" << std::endl;
 	client_states[client_fd] = ClientState();
@@ -410,11 +422,6 @@ void Multiplexer::handleCgiRead(int cgi_fd)
     while ((n = read(cgi_fd, buffer, sizeof(buffer))) > 0) {
         cgi_output.append(buffer, n);
     }
-    
-    if (n < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
-        perror("read from CGI pipe");
-    }
-    
     // CGI finished - cleanup and prepare response
     cleanupCgiProcess(cgi_fd);
     
