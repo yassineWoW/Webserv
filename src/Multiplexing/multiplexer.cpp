@@ -6,11 +6,12 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 21:46:09 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/30 13:06:40 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/08/10 16:50:54 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "multiplexer.hpp"
+
 extern volatile sig_atomic_t stop_server;
 
 Multiplexer* Multiplexer::instance = NULL;
@@ -91,12 +92,33 @@ int Multiplexer::SetupServerSocket(int port)
 
 void Multiplexer::modifyEpollEvents(int fd, uint32_t events)
 {
+    // Check if the file descriptor is valid
+    if (fd < 0) {
+        return;
+    }
+    
+    // Check if client still exists (for client fds)
+    if (client_states.find(fd) == client_states.end() && 
+        listen_fd_set.find(fd) == listen_fd_set.end() &&
+        cgi_fd_to_client_fd.find(fd) == cgi_fd_to_client_fd.end()) {
+        // FD not found in any of our tracking structures
+        return;
+    }
+    
     struct epoll_event ev;
     ev.events = events;
     ev.data.fd = fd;
     if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, fd, &ev) < 0) {
-        perror("epoll_ctl: mod");
-        // Optionally handle error: close fd, erase client state, etc.
+        if (errno == ENOENT) {
+            // FD not in epoll, this is expected in some cleanup scenarios
+            return;
+        } else if (errno == EBADF) {
+            // Bad file descriptor - fd was closed
+            std::cerr << "Warning: Attempted to modify epoll events for closed fd " << fd << std::endl;
+            return;
+        } else {
+            perror("epoll_ctl: mod");
+        }
     }
 }
 
@@ -152,6 +174,12 @@ void Multiplexer::modifyEpollEvents(int fd, uint32_t events)
 
 void Multiplexer::handleClientRead(int client_fd) 
 {
+    // Validate client_fd first
+    if (client_states.find(client_fd) == client_states.end()) {
+        // Client no longer exists, skip processing
+        return;
+    }
+    
 	ClientState &state = client_states[client_fd];
     state.last_activity = time(NULL);
     HttpResponse response;
@@ -159,16 +187,14 @@ void Multiplexer::handleClientRead(int client_fd)
 
     ssize_t n = recv(client_fd, buf, sizeof(buf), 0);
     if (n == 0) {
+        // Client disconnected
+        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
         close(client_fd);
         client_states.erase(client_fd);
         return;
     }
-    if (n < 0) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
-            return; // No more data for now
-        perror("recv error");
-        close(client_fd);
-        client_states.erase(client_fd);
+    if (n < 0)
+	{
         return;
     }
     state.buffer.append(buf, n);
@@ -178,9 +204,12 @@ void Multiplexer::handleClientRead(int client_fd)
         if (state.request.getReadStatus() == END) 
         {
             ParseResult server_result = match_server_location( state.request,  state.response_buffer);
+            std::string url = state.request.getUri();
+            int f_cgi = 0;
+            if ( (url.size() >= 4 && url.substr(url.size() - 4) == ".php") || (url.size() >= 3 && url.substr(url.size() - 3) == ".py"))
+                f_cgi = 1;
             if ( server_result != OK)
                 throw ( server_result );
-
             if ( state.request.getMethod() == "POST" )
             {
                 std::vector<std::string> stored_bodies;
@@ -188,14 +217,40 @@ void Multiplexer::handleClientRead(int client_fd)
             }
             else if ( state.request.getMethod() == "GET" )
             {
-                response.handle_get(state.request, state.response_buffer);
+                std::string url = state.request.getUri();
+                if (f_cgi)
+                {
+                    CGI_handler cgi;
+                    std::string cgi_result = cgi.handle_cgi( state.request );
+                    
+                    // Check if CGI was started successfully
+                    if (cgi_result.substr(0, 12) == "CGI_STARTED:") {
+                        // Parse format: "CGI_STARTED:fd:pid"
+                        std::string remaining = cgi_result.substr(12);
+                        size_t colon_pos = remaining.find(':');
+                        if (colon_pos != std::string::npos) {
+                            int cgi_fd = atoi(remaining.substr(0, colon_pos).c_str());
+                            pid_t cgi_pid = atoi(remaining.substr(colon_pos + 1).c_str());
+                            cgi_fd_to_pid[cgi_fd] = cgi_pid;
+                            registerCgiFd(cgi_fd, client_fd);
+                            return; // Don't modify epoll events yet - wait for CGI to finish
+                        }
+                    } else {
+                        // CGI failed to start
+                        state.response_buffer = cgi_result;
+                    }
+                }
+                else
+                    response.handle_get(state.request, state.response_buffer);
             }
             else if ( state.request.getMethod() == "DELETE" )
             {
                 response.handle_delete(state.request, state.response_buffer);
             }
             state.buffer.clear();
-            modifyEpollEvents(client_fd, EPOLLOUT);
+            if (!state.is_cgi_running) {
+                modifyEpollEvents(client_fd, EPOLLOUT);
+            }
         }
     
     } catch(const ParseResult& e) 
@@ -205,12 +260,18 @@ void Multiplexer::handleClientRead(int client_fd)
             state.response_buffer = error.handle_error( state.request.getServer().error_pages, e ) ;
             modifyEpollEvents(client_fd, EPOLLOUT);
         }
-		state.buffer.clear();     
+        state.buffer.clear();     
     }
 }
 
 void Multiplexer::handleClientWrite(int client_fd)
 {
+    // Validate client_fd first
+    if (client_states.find(client_fd) == client_states.end()) {
+        // Client no longer exists, skip processing
+        return;
+    }
+    
     ClientState &state = client_states[client_fd];
 	state.last_activity = time(NULL);
     // Make sure there is something to send
@@ -223,16 +284,8 @@ void Multiplexer::handleClientWrite(int client_fd)
     ssize_t n = send(client_fd, state.response_buffer.c_str(), state.response_buffer.size(), 0);
    if (n < 0)
    {
-    if (errno == EAGAIN || errno == EWOULDBLOCK)
-	{
-        // Socket not ready for writing, try again later
-        return;
-    }
-    	perror("send");
-    	close(client_fd);
-    	client_states.erase(client_fd);
-    	return;
-	}
+		return ;
+   }
 
     // Remove sent data from the buffer
     state.response_buffer.erase(0, n);
@@ -250,11 +303,44 @@ void Multiplexer::handleClientWrite(int client_fd)
 		else
 		{
             // Otherwise, close connection
+            epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
             close(client_fd);
             client_states.erase(client_fd);
         }
     }
 }
+
+const char* my_inet_ntop(int af, const void* src, char* dst, socklen_t size)
+{
+    if (af != AF_INET || !src || !dst || size < 16) {
+        return NULL; // Invalid parameters
+    }
+    
+    // Cast the source to unsigned char pointer to access individual bytes
+    const unsigned char* addr = (const unsigned char*)src;
+    
+    // Extract each byte of the IP address
+    // IPv4 addresses are stored in network byte order (big-endian)
+    unsigned char byte1 = addr[0];  // First octet
+    unsigned char byte2 = addr[1];  // Second octet
+    unsigned char byte3 = addr[2];  // Third octet
+    unsigned char byte4 = addr[3];  // Fourth octet
+    
+    // Convert each byte to string and format as "xxx.xxx.xxx.xxx"
+    int written = snprintf(dst, size, "%u.%u.%u.%u", 
+                          (unsigned int)byte1,
+                          (unsigned int)byte2, 
+                          (unsigned int)byte3,
+                          (unsigned int)byte4);
+    
+    // Check if the conversion was successful
+    if (written < 0 || written >= (int)size) {
+        return NULL; // Buffer too small or error
+    }
+    
+    return dst; // Return pointer to the result string
+}
+
 
 void	Multiplexer::handleNewConnection(int listen_fd)
 {
@@ -271,12 +357,13 @@ void	Multiplexer::handleNewConnection(int listen_fd)
 		perror("accept");
 		throw std::runtime_error("Accept failure"); // or throw an exception
     }
-    char ip[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &(client_addr.sin_addr), ip, INET_ADDRSTRLEN);
+    char ip[16];
+	my_inet_ntop(AF_INET, &(client_addr.sin_addr), ip, sizeof(ip));
     int client_port = ntohs(client_addr.sin_port);
     std::cout << "\033[36mNEW CONNECTION FROM...  " << ip << ":" << client_port << "\033[0m" << std::endl;
 	client_states[client_fd] = ClientState();
 	client_states[client_fd].last_activity = time(NULL);
+	client_states[client_fd].is_cgi_running = false;
 	int flags = fcntl(client_fd, F_GETFL, 0);
 	if (flags < 0 || fcntl(client_fd, F_SETFL, flags | O_NONBLOCK) < 0)
     {
@@ -295,6 +382,113 @@ void	Multiplexer::handleNewConnection(int listen_fd)
 		client_states.erase(client_fd);
 		return ;
 	}
+}
+
+void Multiplexer::registerCgiFd(int cgi_fd, int client_fd)
+{
+    cgi_fd_to_client_fd[cgi_fd] = client_fd;
+    client_states[client_fd].is_cgi_running = true;
+    client_states[client_fd].cgi_start_time = time(NULL);
+    
+    struct epoll_event ev;
+    ev.events = EPOLLIN;
+    ev.data.fd = cgi_fd;
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, cgi_fd, &ev) < 0) {
+        perror("epoll_ctl: add CGI fd");
+        close(cgi_fd);
+        cgi_fd_to_client_fd.erase(cgi_fd);
+        client_states[client_fd].is_cgi_running = false;
+    }
+}
+
+void Multiplexer::handleCgiRead(int cgi_fd)
+{
+    std::map<int, int>::iterator it = cgi_fd_to_client_fd.find(cgi_fd);
+    if (it == cgi_fd_to_client_fd.end()) {
+        // CGI fd not found, cleanup
+        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, cgi_fd, NULL);
+        close(cgi_fd);
+        return;
+    }
+    
+    int client_fd = it->second;
+    ClientState &state = client_states[client_fd];
+    
+    char buffer[4096];
+    std::string cgi_output;
+    
+    // Read all available data from CGI
+    ssize_t n;
+    while ((n = read(cgi_fd, buffer, sizeof(buffer))) > 0) {
+        cgi_output.append(buffer, n);
+    }
+    // CGI finished - cleanup and prepare response
+    cleanupCgiProcess(cgi_fd);
+    
+    // Set response and switch to write mode
+    state.response_buffer = HttpResponse::create_response(OK, cgi_output);
+    modifyEpollEvents(client_fd, EPOLLOUT);
+}
+
+void Multiplexer::cleanupCgiProcess(int cgi_fd)
+{
+    std::map<int, int>::iterator it = cgi_fd_to_client_fd.find(cgi_fd);
+    if (it != cgi_fd_to_client_fd.end()) {
+        int client_fd = it->second;
+        client_states[client_fd].is_cgi_running = false;
+        cgi_fd_to_client_fd.erase(cgi_fd);
+    }
+    
+    // Clean up PID mapping if it exists
+    std::map<int, pid_t>::iterator pid_it = cgi_fd_to_pid.find(cgi_fd);
+    if (pid_it != cgi_fd_to_pid.end()) {
+        cgi_fd_to_pid.erase(pid_it);
+    }
+    
+    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, cgi_fd, NULL);
+    close(cgi_fd);
+}
+
+void Multiplexer::checkCgiTimeouts()
+{
+    const int CGI_TIMEOUT = 30; // 30 seconds timeout for CGI
+    time_t now = time(NULL);
+    
+    std::vector<int> timed_out_cgis;
+    
+    for (std::map<int, int>::iterator it = cgi_fd_to_client_fd.begin(); 
+         it != cgi_fd_to_client_fd.end(); ++it) {
+        int cgi_fd = it->first;
+        int client_fd = it->second;
+        
+        if (client_states.find(client_fd) != client_states.end()) {
+            ClientState &state = client_states[client_fd];
+            if (now - state.cgi_start_time > CGI_TIMEOUT) {
+                timed_out_cgis.push_back(cgi_fd);
+            }
+        }
+    }
+    
+    // Kill timed out CGI processes
+    for (size_t i = 0; i < timed_out_cgis.size(); ++i) {
+        int cgi_fd = timed_out_cgis[i];
+        std::map<int, pid_t>::iterator pid_it = cgi_fd_to_pid.find(cgi_fd);
+        if (pid_it != cgi_fd_to_pid.end()) {
+            std::cout << "Killing timed out CGI process " << pid_it->second << std::endl;
+            kill(pid_it->second, SIGKILL);
+        }
+        
+        // Send timeout response to client
+        std::map<int, int>::iterator client_it = cgi_fd_to_client_fd.find(cgi_fd);
+        if (client_it != cgi_fd_to_client_fd.end()) {
+            int client_fd = client_it->second;
+            ClientState &state = client_states[client_fd];
+            state.response_buffer = HttpResponse::create_response(InternalError, "CGI script timed out");
+            modifyEpollEvents(client_fd, EPOLLOUT);
+        }
+        
+        cleanupCgiProcess(cgi_fd);
+    }
 }
 
 void Multiplexer::run()
@@ -345,33 +539,58 @@ void Multiplexer::run()
             {
                 int fd = events[i].data.fd;
                 uint32_t ev = events[i].events;
+                
                 if (listen_fd_set.count(fd))
                 {
                     handleNewConnection(fd);
                 }
-                else
+                else if (cgi_fd_to_client_fd.count(fd))
                 {
+                    // This is a CGI fd
                     if (ev & EPOLLIN)
-                        handleClientRead(fd);
-                    if (ev & EPOLLOUT)
-                        handleClientWrite(fd);
+                        handleCgiRead(fd);
                     if (ev & (EPOLLERR | EPOLLHUP))
                     {
-                        perror("epoll error or hangup");
+                        // Handle CGI pipe errors/hangups
+                        std::cout << "CGI fd " << fd << " error or hangup" << std::endl;
+                        cleanupCgiProcess(fd);
+                    }
+                }
+                else
+                {
+                    // This is a client fd
+                    // Check for errors first to avoid processing invalid fds
+                    if (ev & (EPOLLERR | EPOLLHUP))
+                    {
+                        std::cout << "Client fd " << fd << " error or hangup" << std::endl;
                         epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
                         close(fd);
                         client_states.erase(fd);
                         continue;
+                    }
+                    
+                    // Only process read/write if fd is still valid
+                    if (client_states.find(fd) != client_states.end()) {
+                        if (ev & EPOLLIN)
+                            handleClientRead(fd);
+                        if (ev & EPOLLOUT)
+                            handleClientWrite(fd);
                     }
                 }
             }
         }
         // Timeout check runs every second
         time_t now = time(NULL);
+        
+        // Check for CGI timeouts
+        checkCgiTimeouts();
+        
         for (std::map<int, ClientState>::iterator it = client_states.begin(); it != client_states.end(); )
         {
-			if (now - it->second.last_activity > CLIENT_TIMEOUT)
+			// Don't timeout clients that are waiting for CGI (CGI has its own timeout)
+			if (!it->second.is_cgi_running && now - it->second.last_activity > CLIENT_TIMEOUT)
             {
+                epoll_ctl(epoll_fd, EPOLL_CTL_DEL, it->first, NULL);
                 close(it->first);
                 client_states.erase(it++);
             }
@@ -390,101 +609,4 @@ void Multiplexer::run()
         close(epoll_fd);
 }
 
-//void 	Multiplexer::run()
-//{
-//	epoll_fd = epoll_create1(EPOLL_CLOEXEC);
-//	if (epoll_fd < 0)
-//	{
-//		if (errno == EMFILE || errno == ENFILE)
-//		{
-//			std::cerr << "Fatal: File descriptor limit reached (errno " << errno << ")." << std::endl;
-//		}
-//		else
-//		perror("epoll_create1");
-//		throw std::runtime_error("Failed to create epoll instance");
-//	}
-	
-//	// 2. Set up listening sockets (assuming you have a vector of ports)
-//	std::vector<int> listen_fds;
-//	std::set<int> listen_fd_set; // For quick lookup in is_listening_socket
-//	for (size_t i = 0; i < server_ports.size(); ++i)
-//	{
-//		int fd = SetupServerSocket(server_ports[i]);
-//		listen_fds.push_back(fd);
-//		listen_fd_set.insert(fd);
-		
-//		struct epoll_event ev;
-//		ev.events = EPOLLIN;
-//		ev.data.fd = fd;
-//		if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) < 0) {
-//			perror("epoll_ctl: listen_fd");
-//			close(fd);
-//			throw std::runtime_error("Failed to add listen_fd to epoll");
-//		}
-//	}
-	
-//	// main event loop :
-//	const int MAX_EVENTS = 1024;
-//	struct epoll_event events[MAX_EVENTS];
-	
-//	while (!stop_server)
-//	{
-//			int n = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
-//			if (n < 0)
-//			{
-
-//				if (errno == EINTR){ // signals ?
-//					continue ;
-//				}
-//				perror("epoll_wait");
-//				break ;
-//			}
-//			for (int i = 0; i < n; ++i)
-//			{
-//				int fd = events[i].data.fd;
-//				uint32_t ev = events[i].events;
-//				if (listen_fd_set.count(fd))
-//				{
-//					handleNewConnection(fd);
-//				}
-//				else
-//				{
-//					if (ev & EPOLLIN) {
-//					   handleClientRead(fd); // Read request
-//					}
-//					if (ev & EPOLLOUT) {
-//						handleClientWrite(fd); // Write response
-//					}
-//					if (ev & (EPOLLERR | EPOLLHUP))
-//					{
-//						perror("epoll error or hangup");
-//						epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL); // Remove from epoll
-//						close(fd);                                    // Close the socket
-//						client_states.erase(fd);                      // Remove client state
-//						continue ;
-//						// Handle errors or closed connection
-//					}
-//				}
-//			}
-//	//		time_t now = time(NULL);
-//    //for (std::map<int, ClientState>::iterator it = client_states.begin(); it != client_states.end(); )
-//    //{
-//    //    if (now - it->second.last_activity > CLIENT_TIMEOUT)
-//    //    {
-//    //        close(it->first);
-//    //        client_states.erase(it++);
-//    //    }
-//    //    else
-//    //    {
-//    //        ++it;
-//    //    }
-//    //}
-//	}
-//	for (size_t i = 0; i < listen_fds.size(); ++i)
-//    	close(listen_fds[i]);
-//	for (std::map<int, ClientState>::iterator it = client_states.begin(); it != client_states.end(); ++it)
-//    	close(it->first);
-//	client_states.clear();
-//	if (epoll_fd >= 0)
-//    	close(epoll_fd);
-//}
+// No changes needed: epoll event loop already supports multiple clients.

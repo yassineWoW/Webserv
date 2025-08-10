@@ -32,6 +32,11 @@ ParseResult HttpRequest::setServer()
 }
 
 LocationConfig& HttpRequest::getLocation() { return ( this->location ); }
+unsigned int HttpRequest::getContentLength() const { return r_content_length; }
+const std::vector<S_Header>& HttpRequest::getHeaders() const {
+    return r_header;
+}
+
 
 ParseResult HttpRequest::setLocation() 
 {

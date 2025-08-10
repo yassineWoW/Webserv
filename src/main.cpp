@@ -1,7 +1,17 @@
  #include "multiplexer.hpp"
  #include "cfileparser.hpp"
+#include <sys/wait.h>
 
 volatile sig_atomic_t stop_server = 0;
+
+void handle_sigchld(int signum)
+{
+	(void)signum;
+	// Reap all available zombie children
+	while (waitpid(-1, NULL, WNOHANG) > 0) {
+		// Continue reaping
+	}
+}
 
 void hanle_stop_signal(int signum)
 {
@@ -24,6 +34,7 @@ void hanle_stop_signal(int signum)
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGINT, hanle_stop_signal);
 	signal(SIGTERM, hanle_stop_signal);
+	signal(SIGCHLD, handle_sigchld);  // Handle zombie processes
 	
 	try
 	{

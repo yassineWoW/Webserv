@@ -6,14 +6,75 @@ bool ends_with(const std::string &str, const std::string &suffix) {
 }
 
 
-static std::string getResponseType( const std::string& path ) {
-    if (ends_with(path, ".html")) return "text/html";
-    if (ends_with(path, ".css")) return "text/css";
-    if (ends_with(path, ".js")) return "application/javascript";
-    if (ends_with(path, ".jpg")) return "image/jpeg";
-    if (ends_with(path, ".png")) return "image/png";
-    return "text/html";
+static std::string extension_to_mime(std::string ext) {
+    std::string mime;
+    size_t index = ext.find_last_of(".");
+    if ( index != std::string::npos)
+        ext.erase(0, index);
+    if (ext == ".txt") mime = "text/plain";
+    else if (ext == ".html") mime = "text/html";
+    else if (ext == ".css") mime = "text/css";
+    else if (ext == ".xml") mime = "text/xml";
+    else if (ext == ".js") mime = "application/javascript";
+    else if (ext == ".json") mime = "application/json";
+    else if (ext == ".pdf") mime = "application/pdf";
+    else if (ext == ".rtf") mime = "application/rtf";
+    else if (ext == ".zip") mime = "application/zip";
+    else if (ext == ".rar") mime = "application/x-rar-compressed";
+    else if (ext == ".7z") mime = "application/x-7z-compressed";
+    else if (ext == ".tar") mime = "application/x-tar";
+    else if (ext == ".bz2") mime = "application/x-bzip2";
+    else if (ext == ".gz") mime = "application/x-gzip";
+    else if (ext == ".xz") mime = "application/x-xz";
+    else if (ext == ".doc") mime = "application/msword";
+    else if (ext == ".xls") mime = "application/vnd.ms-excel";
+    else if (ext == ".ppt") mime = "application/vnd.ms-powerpoint";
+    else if (ext == ".docx") mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    else if (ext == ".xlsx") mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    else if (ext == ".pptx") mime = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+    else if (ext == ".jar") mime = "application/java-archive";
+    else if (ext == ".exe") mime = "application/x-msdownload";
+    else if (ext == ".bin") mime = "application/octet-stream";
+    else if (ext == ".png") mime = "image/png";
+    else if (ext == ".jpeg") mime = "image/jpeg";
+    else if (ext == ".jpg") mime = "image/jpg";
+    else if (ext == ".gif") mime = "image/gif";
+    else if (ext == ".webp") mime = "image/webp";
+    else if (ext == ".ico") mime = "image/x-icon";
+    else if (ext == ".bmp") mime = "image/bmp";
+    else if (ext == ".svg") mime = "image/svg+xml";
+    else if (ext == ".mp3") mime = "audio/mpeg";
+    else if (ext == ".ogg") mime = "audio/ogg";
+    else if (ext == ".wav") mime = "audio/wav";
+    else if (ext == ".m4a") mime = "audio/x-m4a";
+    else if (ext == ".mp4") mime = "video/mp4";
+    else if (ext == ".webm") mime = "video/webm";
+    else if (ext == ".avi") mime = "video/x-msvideo";
+    else if (ext == ".mov") mime = "video/quicktime";
+    else if (ext == ".flv") mime = "video/x-flv";
+    else if (ext == ".swf") mime = "application/x-shockwave-flash";
+    else if (ext == ".woff") mime = "application/x-font-woff";
+    else if (ext == ".woff2") mime = "application/font-woff2";
+    else if (ext == ".ttf") mime = "application/x-font-ttf";
+    else if (ext == ".otf") mime = "font/otf";
+    else if (ext == ".crt") mime = "application/x-x509-ca-cert";
+    else if (ext == ".kml") mime = "application/vnd.google-earth.kml+xml";
+    else if (ext == ".kmz") mime = "application/vnd.google-earth.kmz";
+    else mime = "application/octet-stream";
+
+    // Add charset=UTF-8 for text-based MIME types
+    if (mime.rfind("text/", 0) == 0 ||
+        mime == "application/javascript" ||
+        mime == "application/json" ||
+        mime == "application/xml" ||
+        mime == "image/svg+xml" ||
+        mime == "application/rtf") {
+        mime += "; charset=UTF-8";
+    }
+    return mime;
 }
+
+
 
 
 void handle_auto_index_response(HttpRequest& request, std::string &body)
@@ -35,11 +96,29 @@ std::string    handle_redirection(HttpRequest& request, std::string CODE, std::s
     std::string response = "";
 
     response = "HTTP/1.1 " + CODE + " Moved\r\n";
-    response += "Content-Type: " + getResponseType( request.getPath() ) + "\r\n";
+    response += "Content-Type: " + extension_to_mime( request.getPath() ) + "\r\n";
     response += "Location: " + URL + "\r\n";
     response += "Connection: close\r\n";
     response += "\r\n";
     return ( response );
+}
+
+std::string setSessionId()
+{
+    static bool seeded = false;
+    if (!seeded) {
+        std::srand(static_cast<unsigned int>(std::time(0)));
+        seeded = true;
+    }
+
+    std::ostringstream oss;
+
+    for (int i = 0; i < 16; ++i) {
+        int r = std::rand() % 256;
+        oss << std::hex << std::setw(2) << std::setfill('0') << r;
+    }
+
+    return oss.str();
 }
 
 void    HttpResponse::handle_get(HttpRequest& request, std::string &response)
@@ -76,19 +155,13 @@ void    HttpResponse::handle_get(HttpRequest& request, std::string &response)
         body = contentStream.str();
     }
     response = "HTTP/1.1 200 OK\r\n";
-    response += "Content-Type: " + getResponseType(request.getPath()) + "\r\n";
+    response += "Content-Type: " + extension_to_mime(request.getPath()) + "\r\n";
     size_t len = body.size();
     response += "Content-Length: " + to_string(len) + "\r\n";
     response += "Connection: close\r\n";
-    if ( request.getCookies().size() > 0 )
+    if ( request.getCookies().find("sid") ==  request.getCookies().end())
     {
-        std::map<std::string, std::string>::iterator begin = request.getCookies().begin();
-        std::map<std::string, std::string>::iterator end = request.getCookies().end();
-        while (begin != end)
-        {
-            response += "Set-Cookie: " + begin->first + "=" + begin->second + "; Secure; HttpOnly;\r\n";
-            begin++;
-        }
+        response += "Set-Cookie: sid=" + setSessionId() + "; Secure; HttpOnly;\r\n";
     }
     response += "\r\n";
     response += body; 
