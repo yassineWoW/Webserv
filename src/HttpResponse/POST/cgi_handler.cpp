@@ -100,7 +100,7 @@ std::pair<int, pid_t> CGI_handler::execute_cgi_script(const std::string& script_
 std::string CGI_handler::handle_cgi(HttpRequest &request)
 {
     std::string url = request.getUri();
-    std::string script_path = request.getPath();
+    std::string script_path = request.getLocation().root;
     
     std::cout << "CGI Debug - URL: " << url << std::endl;
     std::cout << "CGI Debug - Script path: " << script_path << std::endl;
