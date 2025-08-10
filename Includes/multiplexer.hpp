@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 21:46:26 by yimizare          #+#    #+#             */
-/*   Updated: 2025/08/08 11:16:20 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/08/10 16:48:30 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,7 +63,7 @@ class Multiplexer
 			void run();
 			void registerCgiFd(int cgi_fd, int client_fd);
 };
-
+const char* my_inet_ntop(int af, const void* src, char* dst, socklen_t size);
 
 
 
