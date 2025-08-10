@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <sys/wait.h>
+#include <cctype>
 
 enum ParseResult {
     OK = 200,                         // 0 - Success
