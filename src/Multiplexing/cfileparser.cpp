@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/02 18:13:25 by yimizare          #+#    #+#             */
-/*   Updated: 2025/08/10 16:19:44 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/08/11 18:17:26 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -310,6 +310,10 @@ std::vector<ServerConfig> ConfigParser::parse(const std::vector<std::string> tok
 	std::vector<ServerConfig> servers;
 	size_t i = 0;
 	
+	if (tokens.empty()) {
+        throw std::runtime_error("Configuration file is empty - no servers defined");
+    }
+
 	while (i < tokens.size())
 	{
 		if (tokens[i] == "server")
@@ -434,8 +438,16 @@ std::vector<ServerConfig> ConfigParser::parse(const std::vector<std::string> tok
 			}
 			servers.push_back(server);
 		}
+		else
+        {
+            throw std::runtime_error("Invalid configuration: expected 'server' block");
+        }
 		++i;
 	}
+	if (servers.empty())
+	{
+        throw std::runtime_error("No valid server blocks found in configuration");
+    }
 	return (servers);
 }
 
