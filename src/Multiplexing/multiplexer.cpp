@@ -210,7 +210,7 @@ void Multiplexer::handleClientRead(int client_fd)
                 f_cgi = 1;
             if ( server_result != OK)
                 throw ( server_result );
-            if ( state.request.getMethod() == "POST" )
+            else if ( state.request.getMethod() == "POST" )
             {
                 std::vector<std::string> stored_bodies;
                 if (f_cgi)
@@ -243,13 +243,20 @@ void Multiplexer::handleClientRead(int client_fd)
                 }
                 else
                 {
-                    state.response_buffer = response.handle_post( state.request, stored_bodies);
+                    if ( state.request.getCookies().find("PHPSESSID") == state.request.getCookies().end() )
+                        state.response_buffer = handle_redirection( "302", "/login");
+                    else
+                        state.response_buffer = response.handle_post( state.request, stored_bodies);
                 }
             }
             else if ( state.request.getMethod() == "GET" )
             {
                 std::string url = state.request.getUri();
-                if (f_cgi)
+                if ( url.find("/upload") != std::string::npos && state.request.getCookies().find("PHPSESSID") == state.request.getCookies().end())
+                {
+                        state.response_buffer = handle_redirection( "302", "/login");
+                }
+                else if (f_cgi)
                 {
                     CGI_handler cgi;
                     std::string cgi_result = cgi.handle_cgi( state.request, false );
@@ -453,7 +460,46 @@ void Multiplexer::handleCgiRead(int cgi_fd)
     cleanupCgiProcess(cgi_fd);
     
     // Set response and switch to write mode
-    state.response_buffer = HttpResponse::create_response(OK, cgi_output);
+    // state.response_buffer = HttpResponse::create_response(OK, cgi_output);
+std::string status_line = "HTTP/1.1 200 OK\r\n"; // default
+std::string headers;
+std::string body;
+
+std::string::size_type header_end = cgi_output.find("\r\n\r\n");
+if (header_end != std::string::npos)
+{
+    headers = cgi_output.substr(0, header_end);
+    body = cgi_output.substr(header_end + 4);
+
+    // Check for "Status:" header
+    std::string::size_type pos = headers.find("Status:");
+    if (pos != std::string::npos)
+    {
+        std::string status_value = headers.substr(pos + 7);
+        std::string::size_type end = status_value.find("\r\n");
+        if (end != std::string::npos)
+            status_value = status_value.substr(0, end);
+        
+        // Trim spaces
+        while (!status_value.empty() && (status_value[0] == ' ' || status_value[0] == '\t'))
+            status_value.erase(0, 1);
+
+        status_line = "HTTP/1.1 " + status_value + "\r\n";
+
+        // Remove "Status:" line from headers so it doesn't duplicate
+        headers.erase(pos, end + 2);
+    }
+    else if (headers.find("Location:") != std::string::npos)
+    {
+        // No Status but has Location → treat as 302
+        status_line = "HTTP/1.1 302 Found\r\n";
+    }
+}
+
+// Build final response
+state.response_buffer = status_line + headers + "\r\n\r\n" + body;
+
+
     modifyEpollEvents(client_fd, EPOLLOUT);
 }
 
