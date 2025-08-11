@@ -91,17 +91,22 @@ void handle_auto_index_response(HttpRequest& request, std::string &body)
     body += "</ul></body></html>";
 }
 
-std::string    handle_redirection(HttpRequest& request, std::string CODE, std::string URL)
+std::string handle_redirection(const std::string& code, const std::string& url)
 {
-    std::string response = "";
+    std::string reason;
+    if (code == "301") reason = "Moved Permanently";
+    else if (code == "302") reason = "Found";
+    else if (code == "303") reason = "See Other";
+    else reason = "Redirect";
 
-    response = "HTTP/1.1 " + CODE + " Moved\r\n";
-    response += "Content-Type: " + extension_to_mime( request.getPath() ) + "\r\n";
-    response += "Location: " + URL + "\r\n";
+    std::string response;
+    response = "HTTP/1.1 " + code + " " + reason + "\r\n";
+    response += "Location: " + url + "\r\n";
     response += "Connection: close\r\n";
     response += "\r\n";
-    return ( response );
+    return response;
 }
+
 
 std::string setSessionId()
 {
@@ -127,7 +132,7 @@ void    HttpResponse::handle_get(HttpRequest& request, std::string &response)
     {
         const std::string CODE = request.getLocation().redirection_code;
         const std::string URL = request.getLocation().redirection_url;
-        handle_redirection( request, CODE, URL ) ;
+        handle_redirection( CODE, URL ) ;
         return ;
     }
     ParseResult Pathresult = request.check_valid_path( );
@@ -135,7 +140,7 @@ void    HttpResponse::handle_get(HttpRequest& request, std::string &response)
     {
         if ( Pathresult == Redirect )
         {
-            response = handle_redirection( request, "301", request.getUri() + '/' + request.getQuery() ) ;
+            response = handle_redirection( "301", request.getUri() + '/' + request.getQuery() ) ;
             return ;
         }
         Errors errors;

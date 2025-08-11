@@ -61,4 +61,5 @@ ParseResult     isFileAndAccessible(const std::string &path, int accessFlag);
 ParseResult     isDirectoryAndAccessible(const std::string &path);
 bool            ends_with(const std::string &str, const std::string &suffix);
 std::string     create_res(ParseResult code, std::string body, std::string path);
+std::string     handle_redirection(const std::string& code, const std::string& url);
 #endif

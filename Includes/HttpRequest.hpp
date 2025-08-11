@@ -89,6 +89,5 @@ bool            header_invalid_chars(const std::string& key, const std::string& 
 int             hex_char_to_int(char c) ;
 int             hex_to_int(const std::string& hex_str) ;
 ParseResult     match_server_location ( HttpRequest &request, std::string &response);
-std::string     handle_redirection(HttpRequest& request, std::string CODE, std::string URL);
 
 #endif
