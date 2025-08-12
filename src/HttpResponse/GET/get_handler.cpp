@@ -164,10 +164,6 @@ void    HttpResponse::handle_get(HttpRequest& request, std::string &response)
     size_t len = body.size();
     response += "Content-Length: " + to_string(len) + "\r\n";
     response += "Connection: close\r\n";
-    if ( request.getCookies().find("sid") ==  request.getCookies().end())
-    {
-        response += "Set-Cookie: sid=" + setSessionId() + "; Secure; HttpOnly;\r\n";
-    }
     response += "\r\n";
     response += body; 
 }
