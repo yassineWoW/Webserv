@@ -11,6 +11,17 @@ static std::string getResponseType( const std::string& path ) {
     return "text/html";
 }
 
+std::map<ParseResult, std::string> default_errors_pages( ) 
+{
+    std::map<ParseResult, std::string > m;
+    m[Forbidden]              = "/home/smarsi/Desktop/WebservClone/views/errors/403.html";
+    m[NotFound]               = "/home/smarsi/Desktop/WebservClone/views/errors/404.html";
+    m[NotAllowed]             = "/home/smarsi/Desktop/WebservClone/views/errors/405.html";
+    m[InternalError]          = "/home/smarsi/Desktop/WebservClone/views/errors/500.html";
+    m[NotImplemented]         = "/home/smarsi/Desktop/WebservClone/views/errors/501.html";
+    return m;
+}
+
 std::map<ParseResult, std::pair<int, std::string> > create_errors_map() 
 {
     std::map<ParseResult, std::pair<int, std::string> > m;
@@ -33,7 +44,6 @@ std::map<ParseResult, std::pair<int, std::string> > create_errors_map()
     m[NotImplemented]         = std::make_pair(501, "Method Not Implemented");
     return m;
 }
-
 
 std::string create_res(ParseResult code, std::string body, std::string path)
 {
@@ -82,21 +92,23 @@ std::string Errors::handle_error ( std::map<int, std::string> error_pages, Parse
     std::string response = "";
     std::string body = "";
     std::map<int, std::string>::iterator error_page = error_pages.find(status);
-        
-    if (error_page != error_pages.end()) 
+    std::map<ParseResult, std::string> default_errors = default_errors_pages();
+    std::map<ParseResult, std::string>::iterator default_error_page = default_errors.find(status);
+    if (error_page != error_pages.end() && isFileAndAccessible( error_page->second , R_OK) == OK ) 
     {
-        if (isFileAndAccessible( error_page->second , R_OK) == OK)
-        {
-            std::ifstream file(error_page->second .c_str(), std::ios::binary);
-            std::ostringstream contentStream;
-            contentStream << file.rdbuf();
-            body = contentStream.str();
-            response = create_res( status, body, error_page->second);
-        }
-        else
-        {
-            response = create_res( status, body, ".html");
-        }
+        std::ifstream file(error_page->second .c_str(), std::ios::binary);
+        std::ostringstream contentStream;
+        contentStream << file.rdbuf();
+        body = contentStream.str();
+        response = create_res( status, body, error_page->second);
+    }
+    else if ( default_error_page !=  default_errors.end() && isFileAndAccessible( default_error_page->second , R_OK) == OK)
+    {
+        std::ifstream file(default_error_page->second .c_str(), std::ios::binary);
+        std::ostringstream contentStream;
+        contentStream << file.rdbuf();
+        body = contentStream.str();
+        response = create_res( status, body, error_page->second);
     }
     else
         response = create_res( status, body, ".html");
