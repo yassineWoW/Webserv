@@ -147,6 +147,7 @@ void    HttpResponse::handle_get(HttpRequest& request, std::string &response)
         response = errors.handle_error( request.getServer().error_pages, Pathresult ) ;
         return ;
     }
+
     std::string body = "";
     if ( request.getAutoIndex() == true )
     {
@@ -160,10 +161,11 @@ void    HttpResponse::handle_get(HttpRequest& request, std::string &response)
         body = contentStream.str();
     }
     response = "HTTP/1.1 200 OK\r\n";
-    response += "Content-Type: " + extension_to_mime(request.getPath()) + "\r\n";
+    response += "Content-Type: " + ( request.getAutoIndex() == true ? "text/html; charset=UTF-8" : extension_to_mime(request.getPath()) ) + "\r\n";
     size_t len = body.size();
     response += "Content-Length: " + to_string(len) + "\r\n";
     response += "Connection: close\r\n";
     response += "\r\n";
     response += body; 
+    std::cout << request.getPath() << std::endl;
 }

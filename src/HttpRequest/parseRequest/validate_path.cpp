@@ -81,6 +81,7 @@ ParseResult HttpRequest::check_valid_path()
 
         else if (location.autoindex == true && location.index.empty())
         {
+            r_auto_index = true;
             return generateAutoindexHtml();
         }
         return NotFound;
