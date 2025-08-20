@@ -1,5 +1,6 @@
 <?php
     session_start();
+    $username = isset($_COOKIE["user"]) ? $_COOKIE["user"] : (isset($_POST["username"]) ? $_POST["username"] : "default");
 ?>
 
 <html lang="en">
@@ -9,10 +10,7 @@
     <title>Cookies</title>
 </head>
 <body>
-
-<div class="print_name">
-    <h2>
-        Hello <?php echo ( isset($_COOKIE["user"]) ? $_COOKIE["user"] : "default" ); ?>
-    </h2>
-</div>
+    <div class="print_name">
+        <h2>Hello <?php echo $username; ?></h2>
+    </div>
 </html>
