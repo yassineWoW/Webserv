@@ -246,16 +246,16 @@ void Multiplexer::handleClientRead(int client_fd)
                 }
                 else
                 {
-                    if (state.request.getCookies().find("PHPSESSID") == state.request.getCookies().end())
-                        state.response_buffer = handle_redirection( "302", "/login");
-                    else
+                    // if (state.request.getCookies().find("PHPSESSID") == state.request.getCookies().end())
+                    //     state.response_buffer = handle_redirection( "302", "/login");
+                    // else
                         state.response_buffer = response.handle_post( state.request, stored_bodies);
                 }
             }
             else if (state.request.getMethod() == "GET")
             {
                 std::string url = state.request.getUri();
-                if ( url.find("/upload") != std::string::npos && state.request.getCookies().find("PHPSESSID") == state.request.getCookies().end())
+                if ( url == "/login/Cookies.php" && state.request.getCookies().find("PHPSESSID") == state.request.getCookies().end())
                         state.response_buffer = handle_redirection( "302", "/login");
                 else if (f_cgi)
                 {

@@ -1,3 +1,3 @@
 <?php
-    while (1);
+    echo "<body>Hello</body>";
 ?>
