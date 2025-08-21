@@ -91,7 +91,7 @@ static std::string mime_to_extension(const std::string& mime)
     if (mime == "application/x-x509-ca-cert") return ".crt";
     if (mime == "application/vnd.google-earth.kml+xml") return ".kml";
     if (mime == "application/vnd.google-earth.kmz") return ".kmz";
-    return ".bin";
+    return ".txt";
 }
 
 static std::string extract_content_type(const std::string& part)
@@ -244,6 +244,22 @@ std::string HttpResponse::handle_post(HttpRequest& request, std::vector<std::str
             return HttpResponse::create_response(InternalError, "Upload path is not writable by server process. Please check directory permissions or choose a different upload_path in your config.");
         return HttpResponse::create_response(InternalError, "Upload path does not exist or cannot be created.");
     }
+
+    // Check if POST body size exceeds config limit
+    size_t max_body_size = request.getServer().client_max_body_size;
+    // std::cout << "This is max body size : " << max_body_size << std::endl;
+    // std::cout << "This is max body.size() : " << body.size() << std::endl;
+
+    // exit(11);
+    if (body.size() > max_body_size)
+        return HttpResponse::create_response(PayloadTooLarge, "POST body exceeds maximum allowed size.");
+
+    // Check if upload_path is a file and accessible (should be a directory, but if file exists, error)
+    isFileAndAccessible(upload_path, W_OK);
+    std::cout << "This is fileCheck : " << isFileAndAccessible(upload_path, W_OK) << std::endl;
+    exit(1);
+    // if (fileCheck == OK)
+    //     return HttpResponse::create_response(Forbidden, "Upload path is a file, not a directory.");
 
     if (content_type.find("multipart/") == 0)
     {
