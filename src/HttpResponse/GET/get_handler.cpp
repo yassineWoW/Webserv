@@ -132,7 +132,7 @@ void    HttpResponse::handle_get(HttpRequest& request, std::string &response)
     {
         const std::string CODE = request.getLocation().redirection_code;
         const std::string URL = request.getLocation().redirection_url;
-        handle_redirection( CODE, URL ) ;
+        response = handle_redirection( CODE, URL ) ;
         return ;
     }
     ParseResult Pathresult = request.check_valid_path( );
