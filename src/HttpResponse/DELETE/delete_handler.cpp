@@ -39,7 +39,7 @@ void    HttpResponse::handle_delete(HttpRequest& request, std::string &response)
             ParseResult Pathresult = isFileAndAccessible( request.getPath(), R_OK );
             if (Pathresult == NotFound)
             {
-                body = "DELETE: file deleted successfully!";
+                body = "DELETE: file deleted successfully!\n";
                 Pathresult = OK;
             }
             else

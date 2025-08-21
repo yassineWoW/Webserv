@@ -91,6 +91,9 @@ bool HttpRequest::validate_required_headers( )
 
 ParseResult HttpRequest::parse_header(std::string &header)
 {
+    if (header.length() > 1024)
+        throw (PayloadTooLarge);
+
     header+= "\r\n";
     while (!header.empty()) {
         S_Header head;
@@ -147,7 +150,6 @@ ParseResult HttpRequest::parse_header(std::string &header)
     }
     if (!validate_required_headers( ))
         throw (BadRequest);
-    // std::cout << "---------------------------------" <<std::endl;
     handle_cookies();
     return (OK);
 }
