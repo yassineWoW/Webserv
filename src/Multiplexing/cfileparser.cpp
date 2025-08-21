@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/02 18:13:25 by yimizare          #+#    #+#             */
-/*   Updated: 2025/08/21 15:22:07 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/08/21 17:27:30 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -221,8 +221,17 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
 			throw std::runtime_error(oss.str());
 		}
 	}
-	if (!root_found && !cgi_pass_found)
-    	throw std::runtime_error("Each location block must have at least a 'root' or 'cgi_pass' directive: " + location.path);
+
+	if (return_found && cgi_pass_found) {
+        throw std::runtime_error("Conflicting directives: 'return' and 'cgi_pass' cannot be used together in location: " + location.path);
+    }
+    
+    if (return_found && root_found) {
+        throw std::runtime_error("Conflicting directives: 'return' and 'root' cannot be used together in location: " + location.path);
+    }
+	
+	if (!root_found && !cgi_pass_found && !return_found)
+    	throw std::runtime_error("Each location block must have at least a 'root' or 'cgi_pass' or 'return' directive: " + location.path);
 	if (tokens.size() == i)
 		throw std::runtime_error("Syntax error: 'location' block not closed with }'");
 	return (i + 1);
@@ -242,6 +251,10 @@ void	ConfigParser::parse_port(ServerConfig &server, size_t i, std::vector<std::s
     if (port < 1 || port > 65535)
         throw std::runtime_error("Invalid Port value");
     server.listen_port = port;
+	if (server.listen_port == 80)
+	{
+    	std::cerr << "Warning: Port 80 may require root privileges or be in use by another service" << std::endl;
+	}
 }
 
 void ConfigParser::parse_name(ServerConfig &server, size_t i, std::vector<std::string> tokens)
@@ -329,6 +342,8 @@ std::vector<ServerConfig> ConfigParser::parse(const std::vector<std::string> tok
                 throw std::runtime_error("Syntax error: 'server' block not opened with '{'");
             ServerConfig server;
             i = j + 1;
+			server.listen_port = 8080;
+			server.server_name = "localhost";
             bool listen_found = false;
 			bool server_name_found = false;
 			bool cmbs = false;
