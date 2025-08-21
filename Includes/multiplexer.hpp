@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 21:46:26 by yimizare          #+#    #+#             */
-/*   Updated: 2025/08/10 16:48:30 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/08/21 15:22:46 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,7 +54,7 @@ class Multiplexer
 		void cleanupCgiProcess(int cgi_fd);  // New method for CGI cleanup
 		void checkCgiTimeouts();  // New method for CGI timeout checking
 		std::map<int, ClientState> client_states;
-		public :
+	public :
 		~Multiplexer();
 			static void desroyInstance();
 			std::vector<int> server_ports;
