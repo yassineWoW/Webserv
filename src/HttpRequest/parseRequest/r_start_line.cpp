@@ -13,12 +13,12 @@ static int from_hex(char ch) {
     if (ch >= '0' && ch <= '9') return ch - '0';
     if (ch >= 'A' && ch <= 'F') return ch - 'A' + 10;
     if (ch >= 'a' && ch <= 'f') return ch - 'a' + 10;
-    return -1; // invalid
+    return -1;
 }
 
 static std::string url_decode(const std::string &src, bool decode_plus = false) {
     std::string result;
-    result.reserve(src.size()); // optimize allocation
+    result.reserve(src.size());
 
     for (std::string::size_type i = 0; i < src.size(); ++i) {
         if (src[i] == '%' && i + 2 < src.size()) {
@@ -28,11 +28,9 @@ static std::string url_decode(const std::string &src, bool decode_plus = false) 
                 result += static_cast<char>((hi << 4) | lo);
                 i += 2;
             } else {
-                // Invalid encoding, keep as-is
                 result += src[i];
             }
         } else if (decode_plus && src[i] == '+') {
-            // Convert '+' to space only if decode_plus is true
             result += ' ';
         } else {
             result += src[i];
@@ -110,12 +108,9 @@ ParseResult HttpRequest::parse_start_line(std::string &start_line)
     if (method != "GET" && method != "POST" && method != "DELETE")
         throw (NotImplemented);
 
-    std::cout << "url[" << url << "]" << std::endl;
     size_t index = url.find("#");
     if ( index != std::string::npos )
         url.erase( index );
-    std::cout << "url[" << url << "]" << std::endl;
-
 
     r_method = method; r_url = url; r_version = version;
 
@@ -124,8 +119,6 @@ ParseResult HttpRequest::parse_start_line(std::string &start_line)
         r_query = url;
     }
     r_url = url_decode(r_url);
-    r_query = url_decode(r_query, true); // decode '+' as space
-    std::cout << "r_url[" << r_url << "]" << std::endl;
-    std::cout << "r_query[" << r_query << "]" << std::endl;
+    r_query = url_decode(r_query, true); 
     return ( validate_path(r_url) );
 }
