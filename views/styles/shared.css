@@ -1,0 +1,369 @@
+/* Creating unified CSS stylesheet for all HTML pages - Professional Style */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Professional color palette - clean blues, grays, and whites */
+  --primary-blue: #2563eb;
+  --accent-blue: #3b82f6;
+  --background-gray: #f8fafc;
+  --white: #ffffff;
+  --text-dark: #1e293b;
+  --text-light: #64748b;
+  --success-green: #10b981;
+  --danger-red: #ef4444;
+  --border-gray: #e2e8f0;
+  --border-light: #f1f5f9;
+
+  /* Professional sans-serif typography for readability */
+  --font-family-primary: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-family-mono: "Consolas", "Monaco", monospace;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+
+  /* Professional spacing - clean and structured */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+
+  /* Modern but professional border radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Subtle professional shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+body {
+  /* Professional sans-serif font for better readability */
+  font-family: var(--font-family-primary);
+  line-height: 1.6;
+  color: var(--text-dark);
+  background: var(--background-gray);
+  min-height: 100vh;
+  padding-top: 100px; /* Space for fixed header */
+}
+
+/* Clean professional page header with subtle styling */
+.page-header {
+  background: var(--white);
+  color: var(--text-dark);
+  text-align: center;
+  padding: var(--spacing-xl) var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+  border-bottom: 1px solid var(--border-gray);
+  box-shadow: var(--shadow-sm);
+}
+
+.page-header h1,
+.page-header h2 {
+  /* Professional heading styling with proper hierarchy */
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-2xl);
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+  color: var(--primary-blue);
+}
+
+.page-header p {
+  font-size: var(--font-size-lg);
+  color: var(--text-light);
+  margin-bottom: 0;
+}
+
+/* Professional navigation header with clean blue styling */
+.nav-header {
+  background: var(--white);
+  color: var(--text-dark);
+  padding: var(--spacing-lg);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  box-shadow: var(--shadow-md);
+  border-bottom: 1px solid var(--border-gray);
+}
+
+.nav-header h1 {
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-2xl);
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+  text-align: center;
+  color: var(--primary-blue);
+}
+
+.nav-header p {
+  font-size: var(--font-size-base);
+  color: var(--text-light);
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.nav-links {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  list-style: none;
+}
+
+/* Professional button styling with clean blue theme */
+.nav-links a {
+  background: var(--primary-blue);
+  color: var(--white);
+  text-decoration: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 1px solid var(--primary-blue);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-sm);
+}
+
+.nav-links a:hover {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Container styles */
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--spacing-md);
+}
+
+/* Professional form container with clean white background */
+.form-container {
+  background: var(--white);
+  padding: var(--spacing-2xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-width: 400px;
+  margin: 0 auto;
+  border: 1px solid var(--border-gray);
+}
+
+.content-box {
+  background: var(--white);
+  padding: var(--spacing-2xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+  border: 1px solid var(--border-gray);
+}
+
+.content-box h1,
+.content-box h2 {
+  color: var(--primary-blue);
+  font-family: var(--font-family-primary);
+  font-weight: 600;
+}
+
+/* Form elements */
+.form-row {
+  margin-bottom: var(--spacing-lg);
+}
+
+label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  font-weight: 500;
+  color: var(--text-dark);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-sm);
+}
+
+/* Professional form inputs with clean gray borders */
+input[type="text"],
+input[type="file"] {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-gray);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  transition: all 0.2s ease;
+  font-family: var(--font-family-primary);
+  background: var(--white);
+}
+
+input[type="text"]:focus,
+input[type="file"]:focus {
+  border-color: var(--primary-blue);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Professional button styles with clean design */
+.btn {
+  display: inline-block;
+  padding: var(--spacing-md) var(--spacing-xl);
+  border: 1px solid;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  font-family: var(--font-family-primary);
+}
+
+.btn-primary {
+  background: var(--primary-blue);
+  color: var(--white);
+  border-color: var(--primary-blue);
+}
+
+.btn-primary:hover {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-success {
+  background: var(--success-green);
+  color: var(--white);
+  border-color: var(--success-green);
+}
+
+.btn-success:hover {
+  background: #059669;
+  border-color: #059669;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-danger {
+  background: var(--danger-red);
+  color: var(--white);
+  border-color: var(--danger-red);
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-full {
+  width: 100%;
+}
+
+/* Professional navigation grid with clean card styling */
+.nav-grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-xl);
+}
+
+.nav-grid li {
+  margin: 0;
+}
+
+.nav-grid a {
+  display: block;
+  background: var(--white);
+  color: var(--text-dark);
+  text-decoration: none;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  font-weight: 500;
+  text-align: center;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border-gray);
+  font-family: var(--font-family-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.nav-grid a:hover {
+  background: var(--primary-blue);
+  color: var(--white);
+  border-color: var(--primary-blue);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Utility classes */
+.text-center {
+  text-align: center;
+}
+.text-warning {
+  color: #f59e0b;
+}
+.mt-lg {
+  margin-top: var(--spacing-lg);
+}
+.mb-lg {
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-sm);
+  }
+
+  .form-container {
+    padding: var(--spacing-xl);
+  }
+
+  .nav-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header h1,
+  .page-header h2 {
+    font-size: var(--font-size-xl);
+  }
+
+  .nav-links {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .nav-links a {
+    width: 100%;
+    max-width: 200px;
+    text-align: center;
+  }
+}
+
+/* Professional background styling with clean gray background */
+.bg-gradient {
+  background: var(--background-gray);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bg-light {
+  background: var(--white);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-gray);
+}

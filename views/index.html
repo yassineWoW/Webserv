@@ -3,81 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <title>Welcome to My Webserv</title>
-    <style>
-        body {
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
-            color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-
-        h1 {
-            font-size: 3em;
-            margin-bottom: 0.3em;
-        }
-
-        p {
-            font-size: 1.5em;
-            color: #d0dbe6;
-        }
-
-        .container {
-            text-align: center;
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 40px 60px;
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.3);
-        }
-
-        a {
-            margin-top: 20px;
-            display: inline-block;
-            text-decoration: none;
-            color: #ffffff;
-            background-color: #5c8df6;
-            padding: 10px 20px;
-            border-radius: 8px;
-            transition: background-color 0.3s ease;
-        }
-
-        a:hover {
-            background-color: #3b6bdc;
-        }
-
-        footer {
-            position: absolute;
-            bottom: 10px;
-            font-size: 0.9em;
-            color: #ccc;
-            text-align: center;
-        }
-
-        .team {
-            font-weight: bold;
-            color: #ffffff;
-        }
-
-        .team span {
-            color: #ffd700;
-        }
-    </style>
+    <link rel="stylesheet" href="styles/minimal.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-    <div class="container">
-        <h1> Webserv is Running!</h1>
-        <p>Welcome to your custom HTTP server.</p>
-        <a href="/directory">Browse Directory</a>
+    <div class="page-wrapper">
+        <header class="site-header">
+            <div class="container">
+                <div class="header-content">
+                    <a href="/" class="logo">Webserv</a>
+                    <nav>
+                        <ul class="nav-links">
+                            <li><a href="/directory">Directory</a></li>
+                            <li><a href="/login/login.html">Login</a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="container">
+                <div class="card text-center fade-in">
+                    <div class="status-indicator status-success mb-2">
+                        <span>●</span> Server Online
+                    </div>
+                    <h1 class="mb-2">Webserv is Running!</h1>
+                    <p class="card-description">Welcome to your custom HTTP server. Clean, fast, and reliable web serving made simple.</p>
+                    
+                    <!-- Enhanced buttons with icons and better visual styling -->
+                    <div style="display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem;">
+                        <a href="/directory" class="btn btn-primary" style="display: flex; align-items: center; gap: 0.5rem; padding: 1rem 2rem; font-size: 1.1rem; font-weight: 600; border: 2px black solid">
+                            Explore Directory
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Removed feature overview cards section -->
+
+                <div style="text-align: center; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--color-border);">
+                    <p class="text-muted">Built by <strong>yimizare</strong>, <strong>smarsi</strong>, and <strong>abouramt</strong></p>
+                    <p class="text-muted mb-0">Powered by <strong>Webserv @ 1337</strong></p>
+                </div>
+            </div>
+        </main>
     </div>
-    <footer>
-        <div class="team">
-            Built with 💻 and ☕ by <span>yimizare</span>, <span>smarsi</span>, and <span>abouramt</span><br>
-            Proudly powered by <strong>Webserv @ 1337</strong>
-        </div>
-    </footer>
 </body>
 </html>
