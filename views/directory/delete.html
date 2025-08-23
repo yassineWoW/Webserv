@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DELETE Request Demo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .box {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 30px 50px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+    button {
+      background: #e74c3c;
+      border: none;
+      color: white;
+      padding: 12px 20px;
+      font-size: 1.1em;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #c0392b;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 1em;
+      color: #ffd700;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>DELETE Request</h2>
+    <p>Click below to delete <strong>file.txt</strong> from the server.</p>
+    <button onclick="sendDelete()">Delete File</button>
+    <p id="result"></p>
+  </div>
+
+  <script>
+    function sendDelete() {
+      fetch('/delete/file.txt', { method: 'DELETE' })
+        .then(res => {
+          if (res.ok) {
+            document.getElementById("result").innerText = "File deleted successfully!";
+          } else {
+            document.getElementById("result").innerText = "Failed to delete file.";
+          }
+        })
+        .catch(err => {
+          document.getElementById("result").innerText = "Error: " + err;
+        });
+    }
+  </script>
+</body>
+</html>

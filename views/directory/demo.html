@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Webserv Directory</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: #ffffff;
+      padding: 40px 60px;
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    h2 {
+      font-size: 2.4em;
+      margin-bottom: 10px;
+      color: #2a5298;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    p {
+      font-size: 1.15em;
+      margin-bottom: 25px;
+      color: #444;
+      line-height: 1.6;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    li {
+      margin: 18px 0;
+    }
+
+    a {
+      display: block;
+      background: #5c8df6;
+      color: #fff;
+      text-decoration: none;
+      padding: 14px 22px;
+      border-radius: 10px;
+      font-size: 1.2em;          /* Bigger font size */
+      font-weight: 600;          /* Bolder for clarity */
+      letter-spacing: 0.5px;     /* More spacing between letters */
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    a:hover {
+      background: #3b6bdc;
+      transform: translateY(-3px);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Webserv Directory</h2>
+    <p>Select a demo to explore the features of your custom HTTP server:</p>
+
+    <ul>
+      <li><a href="/">Hello Page</a></li>
+      <li><a href="/uploads">GET Request</a></li>
+      <li><a href="post.html">POST Request</a></li>
+      <li><a href="delete.html">DELETE Request</a></li>
+      <li><a href="/cgi">CGI Scripts</a></li>
+      <li><a href="/login/Cookies.php">Cookies & Session</a></li>
+
+    </ul>
+  </div>
+</body>
+</html>
