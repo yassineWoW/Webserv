@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Server Directory - My Webserv</title>
+    <!-- Updated title to match index.html branding -->
+    <link rel="stylesheet" href="../styles/minimal.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <!-- Added page wrapper and header structure to match index.html -->
+    <div class="page-wrapper">
+        <header class="site-header">
+            <div class="container">
+                <div class="header-content">
+                    <a href="/" class="logo">Webserv</a>
+                    <nav>
+                        <ul class="nav-links">
+                            <li><a href="/directory">Directory</a></li>
+                            <li><a href="/login/login.html">Login</a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="container">
+                <!-- Centered the Server Directory content using card and text-center classes -->
+                <div class="card text-center fade-in">
+                    <h1 class="mb-2">Server Directory</h1>
+                    <p class="card-description">Choose what you want to do with your server files.</p>
+                    
+                    <!-- Updated grid layout to display 2-3 items per row with proper spacing -->
+                    <!-- Modified grid to center items when wrapping to new lines -->
+                    <div class="directory-grid" style="margin-top: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; max-width: 800px; margin-left: auto; margin-right: auto; justify-items: center; place-items: center;">
+                        <div class="directory-item card" style="text-decoration: none; transition: transform 0.2s ease;">
+                            <a href="/" style="text-decoration: none; color: inherit; display: block;">
+                                <h3 style="margin-bottom: 0.5rem;">Home</h3>
+                                <p style="margin: 0; color: var(--color-text-muted);">Go back to main page</p>
+                            </a>
+                        </div>
+                        
+                        <div class="directory-item card" style="text-decoration: none; transition: transform 0.2s ease;">
+                            <a href="post.html" style="text-decoration: none; color: inherit; display: block;">
+                                <h3 style="margin-bottom: 0.5rem;">Upload File</h3>
+                                <p style="margin: 0; color: var(--color-text-muted);">Add files to server</p>
+                            </a>
+                        </div>
+                        
+                        
+
+                        <div class="directory-item card" style="text-decoration: none; transition: transform 0.2s ease;">
+                            <a href="delete.html" style="text-decoration: none; color: inherit; display: block;">
+                                <h3 style="margin-bottom: 0.5rem;">Delete File</h3>
+                                <p style="margin: 0; color: var(--color-text-muted);">Remove files from server</p>
+                            </a>
+                        </div>
+                        
+                    </div>
+                </div>
+
+                <!-- Added footer section to match index.html structure -->
+                <div style="text-align: center; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--color-border);">
+                    <p class="text-muted">Built by <strong>yimizare</strong>, <strong>smarsi</strong>, and <strong>abouramt</strong></p>
+                    <p class="text-muted mb-0">Powered by <strong>Webserv @ 1337</strong></p>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
