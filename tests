@@ -1,0 +1,13 @@
+# Test body size limit (adjust port/path as needed)
+curl -X POST -d "12345678901" http://localhost:8080/uploads
+
+# Test normal upload
+curl -X POST -d "hello" http://localhost:8080/uploads
+
+# Test forbidden (set upload_path to a file in config, then)
+curl -X POST -d "test" http://localhost:8080/uploads
+
+
+head -c 3145728 </dev/urandom | base64 | head -c 3000000 | curl -X POST --data-binary @- http://localhost:8080/uploads
+
+curl -X POST -d "test" http://localhost:8080/doesnotexist
