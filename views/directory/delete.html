@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DELETE Request Demo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f0f2f5;
+    }
+
+    .container {
+      background: #fff;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    p {
+      margin-bottom: 20px;
+      color: #555;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 1em;
+      transition: border-color 0.3s;
+    }
+
+    input[type="text"]:focus {
+      border-color: #007BFF;
+      outline: none;
+    }
+
+    button {
+      background-color: #0056b3;
+      color: white;
+      padding: 12px;
+      border: none;
+      width: 100%;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      font-size: 1em;
+    }
+
+    button:hover {
+      background-color: #c0392b;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 0.95em;
+      color: #ff9900;
+      word-wrap: break-word;
+    }
+
+    a {
+      display: inline-block;
+      margin-top: 15px;
+      color: #007BFF;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    a:hover {
+      color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>DELETE Request</h2>
+    <p>Enter the file name to delete from the server:</p>
+    <input type="text" id="filename" placeholder="file.txt">
+    <button onclick="sendDelete()">Delete File</button>
+    <p id="result"></p>
+    <p><a href="demo.html">← Back to Directory</a></p>
+  </div>
+
+  <script>
+    function sendDelete() {
+      const filename = document.getElementById("filename").value.trim();
+      if (!filename) {
+        document.getElementById("result").innerText = "Please enter a file name.";
+        return;
+      }
+
+      fetch(`/delete/${encodeURIComponent(filename)}`, { method: 'DELETE' })
+        .then(res => {
+          if (res.ok) {
+            document.getElementById("result").innerText = `File "${filename}" deleted successfully!`;
+          } else {
+            document.getElementById("result").innerText = `Failed to delete "${filename}".`;
+          }
+        })
+        .catch(err => {
+          document.getElementById("result").innerText = "Error: " + err;
+        });
+    }
+  </script>
+</body>
+</html>

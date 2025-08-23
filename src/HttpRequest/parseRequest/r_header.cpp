@@ -58,32 +58,25 @@ void        HttpRequest::handle_cookies( )
 
 bool HttpRequest::validate_required_headers( )
 {
-    std::string required_headers[] = { "host", (r_method == "POST"? "content-type" : "END"), "END" };
     bool connectionFlag = false;
 
-    for (int i = 0; i < 5; i++)
+    bool flag = false;
+    for (std::vector<S_Header>::const_iterator begin = r_header.begin(); begin != r_header.end(); begin++)
     {
-        if (required_headers[i] == "END")
-            break ;
-
-        bool flag = false;
-        for (std::vector<S_Header>::const_iterator begin = r_header.begin(); begin != r_header.end(); begin++)
+        if (!connectionFlag && begin->key == "connection")
         {
-            if (!connectionFlag && begin->key == "connection")
-            {
-                if (begin->value == "close")
-                    r_keep_alive = false;
-                connectionFlag = true ;
-            }
-            if (required_headers[i] == begin->key && !begin->value.empty())
-            {                
-                flag = true;
-                break ;
-            }
+            if (begin->value == "close")
+                r_keep_alive = false;
+            connectionFlag = true ;
         }
-        if (!flag)
-            throw ( BadRequest );
+        if ( begin->key == "host" && !begin->value.empty() )
+        {                
+            flag = true;
+            break ;
+        }
     }
+    if (!flag)
+        throw ( BadRequest );
 
     return (true);
 }
@@ -93,7 +86,6 @@ ParseResult HttpRequest::parse_header(std::string &header)
 {
     if (header.length() > 1024)
         throw (PayloadTooLarge);
-
     header+= "\r\n";
     while (!header.empty()) {
         S_Header head;

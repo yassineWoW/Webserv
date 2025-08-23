@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/02 18:13:25 by yimizare          #+#    #+#             */
-/*   Updated: 2025/08/11 18:17:26 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/08/21 17:27:30 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -113,11 +113,12 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
             root_found = true;
 			if (tokens.size() <= i + 2 || tokens[i + 2] != ";")
 				throw std::runtime_error("Syntax error: 'root' directive must end with a ';'");
-			location.root = tokens[i + 1];
-			if (location.root.empty() || (location.root[0] != '/' && 
-     location.root.substr(0, 2) != "./" && 
-     location.root.substr(0, 3) != "../")) //|| location.root[0] != '/')
-                throw std::runtime_error("Invalid root path in location block: " + location.path);
+			std::string root_path = tokens[i + 1];
+    		if (root_path.empty() || (root_path[0] != '/' && 
+                root_path.substr(0, 2) != "./" && 
+                root_path.substr(0, 3) != "../"))
+       				 throw std::runtime_error("Invalid root path in location block: " + location.path);
+			location.root = root_path; 
 			i += 3;
 		}
 		else if (tokens[i] == "index")
@@ -185,9 +186,12 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
 			    throw std::runtime_error("upload_path value cannot be empty in location block: " + location.path);
 			if (i + 2 >= tokens.size() || tokens[i + 2] != ";")
     			throw std::runtime_error("Syntax error: 'upload_path' directive must end with ';'");
-			location.upload_path = tokens[i + 1];
-			if (location.upload_path[0] != '/')
-			    throw std::runtime_error("Invalid upload_path in location block: " + location.path);
+			std::string upload_path = tokens[i + 1];
+    		if (upload_path.empty() || (upload_path[0] != '/' && 
+                upload_path.substr(0, 2) != "./" && 
+                upload_path.substr(0, 3) != "../"))
+        			throw std::runtime_error("Invalid upload_path in location block: " + location.path);
+			location.upload_path = upload_path;
 			i += 3;
         }
 		else if (tokens[i] == "return")
@@ -217,8 +221,17 @@ size_t parse_location(const std::vector<std::string> &tokens, size_t i, Location
 			throw std::runtime_error(oss.str());
 		}
 	}
-	if (!root_found && !cgi_pass_found)
-    	throw std::runtime_error("Each location block must have at least a 'root' or 'cgi_pass' directive: " + location.path);
+
+	if (return_found && cgi_pass_found) {
+        throw std::runtime_error("Conflicting directives: 'return' and 'cgi_pass' cannot be used together in location: " + location.path);
+    }
+    
+    if (return_found && root_found) {
+        throw std::runtime_error("Conflicting directives: 'return' and 'root' cannot be used together in location: " + location.path);
+    }
+	
+	if (!root_found && !cgi_pass_found && !return_found)
+    	throw std::runtime_error("Each location block must have at least a 'root' or 'cgi_pass' or 'return' directive: " + location.path);
 	if (tokens.size() == i)
 		throw std::runtime_error("Syntax error: 'location' block not closed with }'");
 	return (i + 1);
@@ -238,6 +251,10 @@ void	ConfigParser::parse_port(ServerConfig &server, size_t i, std::vector<std::s
     if (port < 1 || port > 65535)
         throw std::runtime_error("Invalid Port value");
     server.listen_port = port;
+	if (server.listen_port == 80)
+	{
+    	std::cerr << "Warning: Port 80 may require root privileges or be in use by another service" << std::endl;
+	}
 }
 
 void ConfigParser::parse_name(ServerConfig &server, size_t i, std::vector<std::string> tokens)
@@ -325,6 +342,8 @@ std::vector<ServerConfig> ConfigParser::parse(const std::vector<std::string> tok
                 throw std::runtime_error("Syntax error: 'server' block not opened with '{'");
             ServerConfig server;
             i = j + 1;
+			server.listen_port = 8080;
+			server.server_name = "localhost";
             bool listen_found = false;
 			bool server_name_found = false;
 			bool cmbs = false;
