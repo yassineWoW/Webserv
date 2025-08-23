@@ -255,9 +255,9 @@ std::string HttpResponse::handle_post(HttpRequest& request, std::vector<std::str
         return HttpResponse::create_response(PayloadTooLarge, "POST body exceeds maximum allowed size.");
 
     // Check if upload_path is a file and accessible (should be a directory, but if file exists, error)
-    isFileAndAccessible(upload_path, W_OK);
-    std::cout << "This is fileCheck : " << isFileAndAccessible(upload_path, W_OK) << std::endl;
-    exit(1);
+    // isFileAndAccessible(upload_path, W_OK);
+    // std::cout << "This is fileCheck : " << isFileAndAccessible(upload_path, W_OK) << std::endl;
+    // exit(1);
     // if (fileCheck == OK)
     //     return HttpResponse::create_response(Forbidden, "Upload path is a file, not a directory.");
 

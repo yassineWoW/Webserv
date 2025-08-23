@@ -259,6 +259,12 @@ void Multiplexer::handleClientRead(int client_fd)
                         state.response_buffer = handle_redirection( "302", "/login");
                 else if (f_cgi)
                 {
+                    std::cout << "---------------------------" << state.request.getPath() << std::endl;
+                    ParseResult isOk = isFileAndAccessible(state.request.getPath(), W_OK);
+                    if (isOk != OK)
+                    {
+                        throw isOk;
+                    }
                     CGI_handler cgi;
                     std::string cgi_result = cgi.handle_cgi( state.request, false );
                     
