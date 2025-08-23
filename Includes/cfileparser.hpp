@@ -6,7 +6,7 @@
 /*   By: yimizare <yimizare@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/02 18:13:39 by yimizare          #+#    #+#             */
-/*   Updated: 2025/07/30 12:17:25 by yimizare         ###   ########.fr       */
+/*   Updated: 2025/08/21 15:22:34 by yimizare         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,23 +42,23 @@ struct ServerConfig
 class ConfigParser
 {
 	private :
-		std::string fileContent;
-		static ConfigParser *instance;
-		std::vector<ServerConfig> servers;
-		ConfigParser(const std::string &filename);
+	std::string fileContent;
+	static ConfigParser *instance;
+	std::vector<ServerConfig> servers;
+	ConfigParser(const std::string &filename);
 	public :
-		static std::vector<std::string> tokenize(const std::string &input);
-		static std::vector<ServerConfig> parse(const std::vector<std::string> tokens);
-		static ConfigParser *getInstance(const std::string& filename);
-		std::vector<ServerConfig> &getServers();
-		static void	destroyInstance();
-		static void	parse_port(ServerConfig &server, size_t i, std::vector<std::string> tokens);
-		static void parse_name(ServerConfig &server, size_t i, std::vector<std::string> tokens);
-		static void parse_error_code(ServerConfig &server, size_t i, std::vector<std::string> tokens);
-		static void parse_max_body_size(ServerConfig &server, size_t i, std::vector<std::string> tokens);
-		//~ConfigParser();
-	};
-	
+	static std::vector<std::string> tokenize(const std::string &input);
+	static std::vector<ServerConfig> parse(const std::vector<std::string> tokens);
+	static ConfigParser *getInstance(const std::string& filename);
+	std::vector<ServerConfig> &getServers();
+	static void	destroyInstance();
+	static void	parse_port(ServerConfig &server, size_t i, std::vector<std::string> tokens);
+	static void parse_name(ServerConfig &server, size_t i, std::vector<std::string> tokens);
+	static void parse_error_code(ServerConfig &server, size_t i, std::vector<std::string> tokens);
+	static void parse_max_body_size(ServerConfig &server, size_t i, std::vector<std::string> tokens);
+	//~ConfigParser();
+};
+
 size_t parse_location(const std::vector<std::string> &tokens, size_t i, LocationConfig &location);
 
 #endif
