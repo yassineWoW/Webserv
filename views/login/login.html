@@ -34,12 +34,15 @@
             font-weight: bold;
         }
 
-        input[type="text"] {
-            width: 93%;
+        input[type="text"], 
+        select {
+            width: 100%;
             padding: 0.5rem;
             margin-bottom: 1rem;
             border: 1px solid #ccc;
+            background-color: white;
             border-radius: 4px;
+            font-size: 1rem;
         }
 
         button {
@@ -51,6 +54,7 @@
             font-weight: bold;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 1rem;
         }
 
         button:hover {
@@ -65,7 +69,19 @@
     <form action="login.php" method="POST">
         <label for="username">Username</label>
         <input type="text" name="username" id="username" placeholder="Enter your username" required>
+
+        <label for="color">Choose a color</label>
+        <select name="color" id="color" required>
+            <option value="">-- Select a color --</option>
+            <option value="red">Red</option>
+            <option value="blue">Blue</option>
+            <option value="green">Green</option>
+            <option value="yellow">Yellow</option>
+            <option value="black">Black</option>
+        </select>
+
         <button type="submit">Login</button>
     </form>
 </div>
+</body>
 </html>
