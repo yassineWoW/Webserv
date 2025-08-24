@@ -167,5 +167,4 @@ void    HttpResponse::handle_get(HttpRequest& request, std::string &response)
     response += "Connection: close\r\n";
     response += "\r\n";
     response += body; 
-    std::cout << request.getPath() << std::endl;
 }
