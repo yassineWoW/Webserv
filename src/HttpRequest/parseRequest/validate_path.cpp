@@ -4,10 +4,10 @@ ParseResult isDirectory(const std::string &path)
 {
     struct stat sb;
     if (stat(path.c_str(), &sb) != 0)
-        return ( NotFound ) ;  // does not exist or error
+        return ( NotFound ) ;
     
     if (!S_ISDIR(sb.st_mode))
-        return ( NotFound ) ;  // not a directory
+        return ( NotFound ) ;
     
     return ( OK );
 }
@@ -16,13 +16,13 @@ ParseResult isDirectoryAndAccessible(const std::string &path)
 {
     struct stat sb;
     if (stat(path.c_str(), &sb) != 0)
-        return ( NotFound ) ;  // does not exist or error
+        return ( NotFound ) ;
     
     if (!S_ISDIR(sb.st_mode))
-        return ( NotFound ) ;  // not a directory
+        return ( NotFound ) ;
     
     if (access(path.c_str(), R_OK | X_OK) != 0)
-        return ( Forbidden ) ;  // no permission to read or enter
+        return ( Forbidden ) ;
     
     return ( OK );
 }
@@ -31,13 +31,13 @@ ParseResult isFileAndAccessible(const std::string &path, int accessFlag)
 {
     struct stat sb;
     if (stat(path.c_str(), &sb) != 0)
-        return ( NotFound ) ;  // does not exist or error
+        return ( NotFound ) ;
     
     if (!S_ISREG(sb.st_mode))
-        return ( NotFound ) ;  // not a FILE
+        return ( NotFound ) ;
     
     if (access(path.c_str(), accessFlag) != 0)
-        return ( Forbidden ) ;  // no permission to read or enter
+        return ( Forbidden ) ;
     
     return ( OK );
 }
@@ -49,7 +49,9 @@ ParseResult HttpRequest::generateAutoindexHtml ( ){
     DIR *dr = opendir( path.c_str( ) );
 
     if (dr == NULL)
+    {
         return ( Forbidden );
+    }
 
     while ( (de = readdir(dr)) != NULL )
     {
@@ -71,15 +73,18 @@ ParseResult HttpRequest::check_valid_path()
     if (result == OK)
     {
         LocationConfig location = this->location;
-        this->path += location.index;
+        std::string index_path = this->path + location.index;
 
-        if (isFileAndAccessible(path, R_OK) == OK)
+        if (isFileAndAccessible(index_path, R_OK) == OK)
+        {
+            this->path = index_path;
             return OK;
+        }
 
-        else if (isFileAndAccessible(path, R_OK) == Forbidden)
+        else if (isFileAndAccessible(index_path, R_OK) == Forbidden)
             return Forbidden;
 
-        else if (location.autoindex == true && location.index.empty())
+        else if (location.autoindex == true)
         {
             r_auto_index = true;
             return generateAutoindexHtml();
