@@ -9,12 +9,7 @@ ParseResult HttpRequest::parse( std::string buffer )
     if ( r_read_status == Start_Line )
     {
         if ( !find_and_get(r_buffer, start_line, "\r\n") )
-        {
-            size_t index = r_buffer.find("\r");
-            if ( index != std::string::npos && r_buffer.length() - 1 > index )
-                throw ( BadRequest );
             throw ( Incomplete );
-        }
 
         result = parse_start_line(start_line);
         if ( result != OK )
@@ -25,11 +20,7 @@ ParseResult HttpRequest::parse( std::string buffer )
     if ( r_read_status == Header )
     {
         if ( !find_and_get(r_buffer, header, "\r\n\r\n") )
-        {
-            if ( r_buffer.empty() || r_buffer == "\r\n")
-                throw ( BadRequest );
             throw ( Incomplete );  
-        }
 
         result = parse_header(header);
 
